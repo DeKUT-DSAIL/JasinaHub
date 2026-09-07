@@ -1,0 +1,403 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Nunito:wght@200..1000&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Blue-based color palette */
+    --background: 220 25% 97%;
+    --foreground: 220 15% 15%;
+
+    --card: 220 50% 98%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 220 50% 98%;
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 215 85% 55%;
+    --primary-foreground: 220 50% 98%;
+    --primary-light: 215 90% 65%;
+    --primary-dark: 215 80% 45%;
+
+    --secondary: 220 30% 95%;
+    --secondary-foreground: 220 15% 25%;
+
+    --muted: 220 25% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 215 75% 88%;
+    --accent-foreground: 215 85% 25%;
+
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 220 50% 98%;
+
+    --border: 220 25% 88%;
+    --input: 220 30% 92%;
+    --ring: 215 85% 55%;
+
+    --radius: 12px;
+
+    --glass-bg: 220 50% 98% / 0.8;
+    --glass-border: 220 40% 90% / 0.3;
+    --gradient-primary: linear-gradient(135deg, hsl(215 85% 55%), hsl(215 90% 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(220 50% 98% / 0.9), hsl(220 40% 95% / 0.8));
+    --gradient-card: linear-gradient(135deg, hsl(220 50% 98% / 0.7), hsl(220 40% 96% / 0.6));
+    --shadow-glass: 0 8px 32px hsl(215 85% 55% / 0.1);
+    --shadow-soft: 0 4px 20px hsl(220 25% 80% / 0.3);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 220 30% 95%;
+    --card: 220 25% 12%;
+    --card-foreground: 220 30% 95%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 220 30% 95%;
+    --primary: 215 85% 65%;
+    --primary-foreground: 220 20% 8%;
+    --primary-light: 215 90% 75%;
+    --primary-dark: 215 80% 55%;
+    --secondary: 220 20% 15%;
+    --secondary-foreground: 220 30% 90%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 15% 65%;
+    --accent: 215 75% 25%;
+    --accent-foreground: 215 85% 90%;
+    --destructive: 0 75% 65%;
+    --destructive-foreground: 220 30% 95%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 215 85% 65%;
+    --glass-bg: 220 25% 12% / 0.8;
+    --glass-border: 220 30% 25% / 0.3;
+    --gradient-primary: linear-gradient(135deg, hsl(215 85% 65%), hsl(215 90% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(220 25% 12% / 0.9), hsl(220 20% 15% / 0.8));
+    --gradient-card: linear-gradient(135deg, hsl(220 25% 12% / 0.7), hsl(220 20% 16% / 0.6));
+    --shadow-glass: 0 8px 32px hsl(215 85% 65% / 0.1);
+    --shadow-soft: 0 4px 20px hsl(220 20% 10% / 0.3);
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 220 30% 90%;
+    --sidebar-primary: 215 85% 65%;
+    --sidebar-primary-foreground: 220 20% 8%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 220 30% 90%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 215 85% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+    background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--secondary)));
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-nunito font-bold;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out forwards;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out forwards;
+  }
+
+  /* Keyframes for animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Will-change hints for animated elements */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  .will-change-auto {
+    will-change: auto;
+  }
+
+  /* Reduced motion support - comprehensive */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    /* Remove blob animations in reduced motion */
+    .animate-blob {
+      animation: none !important;
+    }
+
+    /* Remove all motion-based effects */
+    .hover\:scale-105:hover,
+    .hover\:scale-\[1\.01\]:hover,
+    .hover\:scale-\[1\.02\]:hover,
+    .active\:scale-\[0\.98\]:active {
+      transform: none !important;
+    }
+  }
+
+  /* Motion-safe utilities - only animate when user prefers motion */
+  @media (prefers-reduced-motion: no-preference) {
+    .motion-safe\:animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    .motion-safe\:animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .motion-safe\:transition-all {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .motion-safe\:animate-slide-up {
+      animation: slideUp 0.4s ease-out forwards;
+    }
+
+    .motion-safe\:hover\:scale-105:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  /* Motion-reduce utilities - instant feedback without animation */
+  @media (prefers-reduced-motion: reduce) {
+    .motion-reduce\:transition-none {
+      transition: none !important;
+    }
+
+    .motion-reduce\:animate-none {
+      animation: none !important;
+    }
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/30;
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-button {
+    @apply bg-gradient-to-r from-primary to-primary-light text-primary-foreground backdrop-blur-sm;
+    box-shadow: var(--shadow-glass);
+    transition: var(--transition-smooth);
+  }
+
+  .glass-button:hover {
+    @apply shadow-lg scale-105;
+    box-shadow: 0 12px 40px hsl(var(--primary) / 0.3);
+  }
+
+  .voice-recording-active {
+    @apply animate-pulse;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3);
+  }
+
+  .category-card {
+    @apply glass-card p-6 rounded-2xl hover:scale-105;
+    transition: var(--transition-bounce);
+    background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+  }
+
+  .category-card:hover {
+    box-shadow: 0 12px 48px hsl(var(--primary) / 0.15);
+  }
+
+  /* Enhanced focus states for accessibility */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  /* Improved focus visible for all interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible,
+  [role="button"]:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    outline-offset: 2px;
+  }
+
+  /* High contrast focus for better visibility */
+  @media (prefers-contrast: more) {
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid currentColor !important;
+      outline-offset: 2px;
+    }
+  }
+
+  /* Skip link styles */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[200];
+    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    transition: transform 0.2s ease-out;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  /* Visually hidden but accessible - improved */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Print styles: only show the research paper */
+@media print {
+  /* Force light theme for print regardless of user preference */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .research-paper-printable,
+  .research-paper-printable * {
+    visibility: visible;
+    color-scheme: light !important;
+  }
+  .research-paper-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: white !important;
+    color: black !important;
+  }
+  .research-paper-printable .bg-muted\/20,
+  .research-paper-printable .bg-muted\/40 {
+    background-color: hsl(220 25% 95%) !important;
+  }
+  .research-paper-printable .text-muted-foreground {
+    color: hsl(220 10% 40%) !important;
+  }
+  .research-paper-printable .border-border {
+    border-color: hsl(220 25% 85%) !important;
+  }
+  .print\\:hidden {
+    display: none !important;
+  }
+  /* Each diagram gets its own printed page */
+  .mermaid-diagram-break {
+    page-break-before: always;
+  }
+}

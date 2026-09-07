@@ -1,0 +1,1 @@
+ALTER TABLE public.transcriptions ADD COLUMN edit_count integer NOT NULL DEFAULT 0;

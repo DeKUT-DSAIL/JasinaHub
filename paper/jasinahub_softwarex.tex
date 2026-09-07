@@ -1,0 +1,171 @@
+\documentclass[final,5p,times,twocolumn]{elsarticle}
+
+\usepackage{graphicx}
+\graphicspath{{images/}}
+
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% =====================================================================
+% NOTE TO CO-AUTHORS
+% This revision aligns the manuscript with the deployed JasinaHub codebase.
+% Only claims that were inconsistent with the implementation have been
+% edited; the structure, argument, and citations are preserved. Edits are
+% concentrated in: Abstract, Section 2 (Software description),
+% Section 5 (Illustrative example), and Table 1 (Code metadata).
+% =====================================================================
+
+\journal{SoftwareX}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{JasinaHub: A Web-Based Platform for Curating Speech Datasets in Low-Resource African Languages Toward Automatic Speech Recognition}
+
+\author[dsail]{Braxton Mandara\corref{cor1}}
+\ead{dsail@dkut.ac.ke}
+\cortext[cor1]{Corresponding author.}
+
+\address[dsail]{DSAIL Research Group, Dedan Kimathi University of Technology, Nyeri, Kenya}
+
+\begin{abstract}
+The development of Automatic Speech Recognition (ASR) systems for African languages is critically hindered by the scarcity of structured, high-quality speech corpora. \emph{JasinaHub} is an open-source web-based platform designed to address this gap by enabling community-driven collection and transcription of voice data in low-resource African languages. The platform provides a structured data collection pipeline in which volunteers respond to categorised health-related prompts in their native language, producing paired audio--transcription datasets suitable for ASR model training. Built on a modern serverless architecture using React, TypeScript, and a Backend-as-a-Service (BaaS) infrastructure, \emph{JasinaHub} implements role-based access control via a dedicated \texttt{user\_roles} table and a \texttt{SECURITY DEFINER} \texttt{has\_role()} function, atomic transcription locking with a 10-minute lease, offline resilience through a \texttt{localStorage}-backed recovery service, and administrative quality-assurance workflows including a built-in test harness and a ZIP-plus-CSV dataset exporter. Recording is capped at 30~s per response, and each question retires automatically after receiving three unique responses. The system features a database schema of eleven tables protected by Row-Level Security policies, a mobile-first progressive web application with haptic feedback and gesture navigation, and an explicit informed-consent workflow for ethical data collection. \emph{JasinaHub} is initially targeted at Kikuyu and is designed to be extensible to other under-resourced African languages.
+\end{abstract}
+
+\begin{keyword}
+Speech corpus \sep Low-resource languages \sep Automatic Speech Recognition \sep Voice data collection \sep Transcription \sep African languages \sep Kikuyu \sep Progressive Web Application
+\end{keyword}
+
+\end{frontmatter}
+
+% =====================================================================
+\section*{Code metadata}
+
+\begin{table}[h]
+\centering
+\caption{Code metadata.}
+\label{tab:metadata}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Current code version & v1.0 \\
+Permanent link to code/repository & \url{https://github.com/<org>/jasinahub} \\
+Permanent link to reproducible capsule & --- \\
+Legal code license & MIT \\
+Code versioning system used & Git \\
+Software code languages & TypeScript, SQL, HTML, CSS \\
+Compilation requirements / dependencies & Node.js $\geq$ 18, React 18, Vite 5, Supabase JS SDK \\
+Developer documentation / manual & In-app Admin Documentation tab; \texttt{docs/} folder in repository \\
+Support email for questions & \href{mailto:dsail@dkut.ac.ke}{dsail@dkut.ac.ke} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =====================================================================
+\section{Motivation and significance}
+
+% [Section unchanged from the submitted manuscript aside from the
+% platform-name substitution. Retain the original prose here.]
+
+% =====================================================================
+\section{Software description}
+
+\subsection{Architecture}
+\emph{JasinaHub} employs a client--server architecture built on the Backend-as-a-Service (BaaS) paradigm. The frontend is a single-page application (SPA) developed with React~18 and TypeScript, bundled with Vite for optimal performance. The backend leverages a managed PostgreSQL database with Row-Level Security (RLS), authentication services (GoTrue), object storage for audio files, and serverless edge functions for specialised operations (e.g.\ password reset).
+
+\subsection{Database schema}
+The relational schema comprises eleven interconnected tables plus one object-storage bucket that together support the complete data-collection and transcription pipeline.
+
+\begin{table*}[t]
+\centering
+\caption{Database schema overview (public schema).}
+\label{tab:schema}
+\small
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+\textbf{Table} & \textbf{Purpose} & \textbf{Key fields} \\
+\midrule
+\texttt{profiles} & Extended user metadata linked to \texttt{auth.users} & first\_name, last\_name, phone\_number, dialect, gender, age, verified, transcription\_approved, voice\_recording\_consent, transcription\_guidelines\_agreed \\
+\texttt{categories} & Thematic groupings for health-related questions & name, description \\
+\texttt{questions} & Individual prompts within categories & question\_text, category\_id, order\_index, image\_url \\
+\texttt{voice\_responses} & Audio recordings linked to users and questions & audio\_file\_url, duration\_seconds, status (pending/accepted/rejected), question\_id, user\_id \\
+\texttt{transcriptions} & Textual transcriptions of voice responses & transcription\_text, voice\_response\_id, user\_id, edit\_count, status \\
+\texttt{transcription\_locks} & Atomic locking for transcription assignment (10-minute lease) & voice\_response\_id, user\_id, locked\_at, expires\_at \\
+\texttt{user\_progress} & Per-category completion tracking & category\_id, user\_id, completed\_questions, total\_questions \\
+\texttt{user\_roles} & Role-based access control (separate from \texttt{profiles}) & user\_id, role (\texttt{app\_role} enum) \\
+\texttt{user\_activity\_logs} & Audit trail for platform interactions & user\_id, action, page, details (JSONB) \\
+\texttt{feedback\_questions} & Configurable feedback prompts shown to end users & question\_text, question\_type, required, is\_active, order\_index \\
+\texttt{feedback\_submissions} & Anonymous end-user feedback responses & question\_id, answer, submitted\_at \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Object storage bucket:} \texttt{voice-recordings} --- stores uploaded WebM/Opus audio blobs.} \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Security and access control}
+Security is enforced at the database level through PostgreSQL Row-Level Security (RLS) policies on all tables. A custom \texttt{has\_role()} function, defined with \texttt{SECURITY DEFINER} privileges, enables non-recursive role checking within RLS policies. The \texttt{user\_roles} table --- deliberately kept separate from \texttt{profiles} to prevent privilege escalation --- stores role assignments using a PostgreSQL enum (\texttt{app\_role}) with values \texttt{'admin'} and \texttt{'user'}. Transcriber capability is a second-order flag stored on \texttt{profiles.transcription\_approved} and is granted only by an administrator; ordinary users therefore fall into three effective roles at runtime: \emph{volunteer}, \emph{approved transcriber}, and \emph{administrator}. This architecture ensures that role verification occurs at the database layer rather than the client, preventing privilege escalation attacks.
+
+The \texttt{voice\_responses} table implements a three-state status enum (\texttt{pending}, \texttt{accepted}, \texttt{rejected}) enabling administrator quality control before recordings enter the dataset pipeline. Each user can only access their own recordings, while approved transcribers gain read-only access to voice responses they have been assigned through the locking mechanism.
+
+\subsection{Authentication and consent}
+User authentication is handled through GoTrue with email/password registration only; no third-party OAuth providers (e.g.\ Google) are enabled. New accounts require email verification before access is granted, and password recovery is implemented as a dedicated Supabase edge function (\texttt{supabase/functions/reset-password}). The registration flow collects demographic metadata (age, gender, dialect) that serves dual purposes: user profiling and dataset annotation. A dedicated consent workflow records explicit voice-recording consent with timestamps (\texttt{voice\_recording\_consent}, \texttt{consent\_timestamp}) before volunteers can begin recording. Transcribers must additionally agree to the transcription guidelines, tracked via \texttt{transcription\_guidelines\_agreed} and \texttt{transcription\_guidelines\_agreed\_at} fields.
+
+\subsection{Functionalities}
+
+\subsubsection{Voice recording module}
+Authenticated volunteers navigate a structured set of health-related questions organised by category. For each question, the volunteer records a spoken response in their native language using the browser's MediaRecorder API. The system captures audio in WebM/Opus format and enforces a hard \textbf{30-second cap} per response. On desktop, the \texttt{AudioWaveform} component provides real-time waveform visualisation during recording; on mobile the interface is intentionally minimalist, replacing the waveform with a circular progress indicator (\texttt{MinimalRecorder}) for lower cognitive load and reduced GPU cost on entry-level devices. Once submitted, audio is uploaded to the \texttt{voice-recordings} storage bucket and metadata --- duration, question association, and user identity --- is persisted in the database. To reduce redundant capture and steer collection towards breadth, each question is automatically retired from active rotation once it has received \textbf{three unique responses} (enforced via the \texttt{get\_question\_counts} RPC). Category-level completion is displayed on the volunteer dashboard through the \texttt{SegmentedProgress} component and users may resume across sessions.
+
+\subsubsection{Transcription module}
+Approved transcribers are assigned voice recordings through an atomic locking mechanism implemented as a PostgreSQL function (\texttt{claim\_random\_transcription}). This function randomly selects an untranscribed recording, assigns it to the requesting transcriber, and creates a \textbf{10-minute lock} (via the \texttt{transcription\_locks} table) to prevent concurrent assignment. A complementary \texttt{release\_transcription\_lock} function handles lock expiry and voluntary release. Transcribers listen to the audio and provide a verbatim textual transcription --- including filler markers such as \texttt{[Pause]} and \texttt{[uh]} --- in the original language. The system tracks edit counts (capped at three revisions per transcription) and submission timestamps. Comprehensive transcription guidelines --- covering borrowed-word handling, punctuation conventions, and dialectal variations --- are accessible via the \texttt{TranscriptionGuidelinesReference} panel.
+
+\subsubsection{Feedback module}
+A lightweight feedback module lets any authenticated end user submit anonymous responses to admin-configured prompts (e.g.\ recording-experience ratings). Submissions are persisted to \texttt{feedback\_submissions} and surfaced to administrators through the \texttt{AdminFeedbackTab}, closing the loop between platform users and maintainers.
+
+\subsubsection{Administration and quality-assurance module}
+Administrators access a comprehensive dashboard providing real-time statistics: total recordings, transcriptions completed, active users (tracked via the \texttt{usePresenceTracking} hook), and per-question response distributions. The admin panel includes user management (verification, transcriber approval, role assignment), response review (accept/reject recordings with status transitions), transcription oversight, feedback review, and activity logging through the \texttt{user\_activity\_logs} table. A dataset-export capability produces a ZIP archive of audio files together with a CSV manifest of paired transcriptions; the exporter chunks storage fetches, applies retries with exponential backoff, and falls back to a metadata-only CSV when audio downloads fail --- important for large exports over unreliable networks. The admin panel additionally ships a browser-side test harness organised into thirteen suites (Smoke, Auth, RLS, RPCs, Data Integrity, Business Rules, Storage, Performance, Accessibility, Compatibility, End-to-End, Resilience, Regression) that exercises live RLS and RPC behaviour against the running backend.
+
+\subsection{Mobile-first design and offline resilience}
+Recognising that most target users access the platform via mobile devices, \emph{JasinaHub} is implemented as a Progressive Web Application (PWA) with mobile-first design principles. The interface employs responsive layouts, touch-optimised controls, and native-like interactions including haptic feedback (\texttt{useHapticFeedback} hook), swipe gestures for navigation (\texttt{useSwipeGesture} hook), and pull-to-refresh functionality (\texttt{usePullToRefresh} hook).
+
+To prevent data loss on unstable network connections --- a common reality in many African communities --- the platform implements an offline recovery system. Audio recordings are persisted to \texttt{localStorage} as base64-encoded blobs via a dedicated \texttt{recordingStorage} service before upload begins. If an upload is interrupted, the \texttt{RecoveryDialog} component automatically detects orphaned recordings on the user's next visit and prompts them to resume or retry the upload. An \texttt{OfflineIndicator} component provides real-time network-status feedback.
+
+\subsection{Activity tracking and monitoring}
+The platform implements comprehensive activity monitoring through the \texttt{useActivityTracker} hook, which logs user interactions (page visits, recording submissions, transcription completions) to the \texttt{user\_activity\_logs} table. Real-time presence tracking via the \texttt{PresenceTracker} component enables administrators to monitor concurrent platform usage. The admin dashboard visualises this data through interactive charts (built with Recharts) showing recording trends, transcription progress, and user engagement metrics.
+
+% =====================================================================
+\section{Illustrative examples}
+
+% [Retain the submitted prose. Only the two numerical/technical claims
+% below have been reconciled with the implementation.]
+
+\subsection{Volunteer recording session}
+A volunteer signs in with email and password, grants microphone permission, records a $\leq 30$~s response to the current prompt, and submits. The recording is uploaded to the \texttt{voice-recordings} bucket; if the upload is interrupted, the client resumes from the copy held in \texttt{localStorage} on the next visit. Once the prompt has accumulated three unique responses from distinct users, it is automatically retired from the active queue.
+
+\subsection{Transcriber session}
+An approved transcriber requests a task. \texttt{claim\_random\_transcription} atomically selects a pending recording and inserts a 10-minute lock into \texttt{transcription\_locks}. The transcriber may edit the submission up to three times before finalisation; on abandonment or timeout, the lock expires and the recording returns to the queue.
+
+% =====================================================================
+\section{Impact}
+
+% [Section unchanged from the submitted manuscript aside from the
+% platform-name substitution. Retain the original prose here.]
+
+% =====================================================================
+\section{Conclusions}
+
+\emph{JasinaHub} presents a practical, deployable solution for the systematic collection of speech data in low-resource African languages. The platform combines structured data elicitation through health-related prompts, community-driven transcription with atomic locking and quality-assurance mechanisms, mobile-first PWA design with offline resilience, comprehensive security through database-level RLS policies and role-based access control, and administrative tools for dataset curation and export. The system is initially targeted at Kikuyu and has been designed with extensibility as a core principle.
+
+Future work will focus on four directions: (1) expanding the platform to additional African languages by onboarding new language communities, (2) integrating semi-automated transcription using preliminary ASR models trained on collected data to accelerate the transcription pipeline, (3) developing and benchmarking ASR models trained on \emph{JasinaHub}-curated datasets to validate the quality and utility of the collected corpora, and (4) implementing inter-annotator agreement metrics to quantify transcription consistency across multiple transcribers.
+
+% =====================================================================
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+\section*{Acknowledgments}
+The authors acknowledge the Centre for Data Science and Artificial Intelligence at Dedan Kimathi University of Technology for their support in this research.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{references}
+\end{document}
