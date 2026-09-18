@@ -11,6 +11,7 @@ import { SkipToContent } from "@/components/ui/SkipToContent";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { PresenceTracker } from "@/components/PresenceTracker";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import UpdatePassword from "./pages/UpdatePassword";
 
 // Helper to retry dynamic imports on chunk load failures
 const lazyRetry = (importFn: () => Promise<any>) =>
@@ -84,6 +85,7 @@ const App = () => (
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                   <Route path="/docs" element={<AdminRoute><Docs /></AdminRoute>} />
+                  <Route path="/update-password" element={<UpdatePassword />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

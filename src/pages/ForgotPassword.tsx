@@ -1,98 +1,81 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthLayout } from "@/components/Auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowLeft, Eye, EyeOff, Lock, CheckCircle, XCircle } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Mail, ArrowLeft, CheckCircle2, RotateCcw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-// Validation schemas
 const emailSchema = z.string().email("Please enter a valid email address");
-const passwordSchema = z.string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number");
 
 export default function ForgotPassword() {
-  const [step, setStep] = useState<"email" | "password">("email");
   const [email, setEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string }>({});
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-    setIsLoading(true);
-
-    // Validate email format
-    const emailValidation = emailSchema.safeParse(email);
-    if (!emailValidation.success) {
-      setErrors({ email: emailValidation.error.errors[0].message });
-      setIsLoading(false);
-      return;
+  // Helper to determine redirect URL: always target jasinahub.vercel.app in production
+  const getRedirectUrl = () => {
+    if (typeof window !== "undefined") {
+      const origin = window.location.origin;
+      // If developing locally, redirect to localhost
+      if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+        return `${origin}/update-password`;
+      }
     }
-
-    // Move directly to password reset step
-    // The edge function will verify if the user exists
-    setStep("password");
-    setIsLoading(false);
+    return "https://jasinahub.vercel.app/update-password";
   };
 
-  const handlePasswordReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
+  // Cooldown timer for resend
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResetRequest = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setError(null);
+
+    const validation = emailSchema.safeParse(email.trim());
+    if (!validation.success) {
+      setError(validation.error.errors[0].message);
+      return;
+    }
+
     setIsLoading(true);
 
-    // Validate password
-    const passwordValidation = passwordSchema.safeParse(newPassword);
-    if (!passwordValidation.success) {
-      setErrors({ password: passwordValidation.error.errors[0].message });
-      setIsLoading(false);
-      return;
-    }
-
-    // Check if passwords match
-    if (newPassword !== confirmPassword) {
-      setErrors({ confirm: "Passwords do not match" });
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Call edge function to reset password
-      const { data, error } = await supabase.functions.invoke('reset-password', {
-        body: {
-          email: email,
-          newPassword: newPassword,
-        },
-      });
+      const redirectTo = getRedirectUrl();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo,
+        }
+      );
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (resetError) throw resetError;
+
+      setIsSubmitted(true);
+      setResendCooldown(60);
 
       toast({
-        title: "Password reset successful",
-        description: "You can now login with your new password",
+        title: "Reset link sent",
+        description: "Check your email for the password reset link.",
       });
-
-      // Redirect to login
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to send reset link";
+      setError(msg);
       toast({
         title: "Error",
-        description: error.message || "Failed to reset password",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -100,127 +83,78 @@ export default function ForgotPassword() {
     }
   };
 
-  // Step 2: Password reset form
-  if (step === "password") {
-    const passwordMatch = newPassword && confirmPassword && newPassword === confirmPassword;
-    const passwordStrength = newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) && /[0-9]/.test(newPassword);
-
+  // Success Confirmation Screen
+  if (isSubmitted) {
     return (
       <AuthLayout
-        title="Reset Your Password"
-        subtitle={`Reset password for ${email}`}
+        title="Check Your Email"
+        subtitle={`We've sent a password reset link to ${email}`}
       >
-        <form onSubmit={handlePasswordReset} className="space-y-6">
-          {/* New Password */}
-          <div className="space-y-2">
-            <Label htmlFor="newPassword" className="text-sm font-medium text-gray-900">
-              New Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                id="newPassword"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter new password"
-                className="pl-10 pr-10 border-2 border-gray-200 focus:border-primary"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+        <div className="space-y-6 text-center">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
-            {errors.password && (
-              <p className="text-sm text-red-600 flex items-center gap-1">
-                <XCircle className="w-4 h-4" />
-                {errors.password}
-              </p>
-            )}
-            {newPassword && !errors.password && (
-              <div className="text-xs space-y-1">
-                <p className={`flex items-center gap-1 ${passwordStrength ? 'text-green-600' : 'text-gray-500'}`}>
-                  {passwordStrength ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                  At least 8 characters with uppercase, lowercase, and number
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Confirm Password */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">
-              Confirm New Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm new password"
-                className="pl-10 pr-10 border-2 border-gray-200 focus:border-primary"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {errors.confirm && (
-              <p className="text-sm text-red-600 flex items-center gap-1">
-                <XCircle className="w-4 h-4" />
-                {errors.confirm}
-              </p>
-            )}
-            {confirmPassword && passwordMatch && (
-              <p className="text-sm text-green-600 flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                Passwords match
-              </p>
-            )}
+            <p className="text-sm text-gray-600">
+              Click the link in the email to reset your password on{" "}
+              <strong className="text-gray-900">jasinahub.vercel.app</strong>.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              If you don't see it within a minute, please check your spam or junk folder.
+            </p>
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            size="lg"
-            disabled={isLoading || !passwordMatch || !passwordStrength}
-          >
-            {isLoading ? "Resetting Password..." : "Reset Password"}
-          </Button>
+          <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={resendCooldown > 0 || isLoading}
+              onClick={() => handleResetRequest()}
+              className="inline-flex items-center justify-center"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Email"}
+            </Button>
 
-          <div className="text-center">
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setStep("email")}
+              size="sm"
+              onClick={() => {
+                setIsSubmitted(false);
+                setError(null);
+              }}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Change Email Address
+            </Button>
+          </div>
+
+          <div className="pt-4 border-t">
+            <Link
+              to="/login"
               className="text-sm text-primary hover:text-primary/80 font-medium transition-colors inline-flex items-center"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
-              Back to Email
-            </Button>
+              Back to Sign In
+            </Link>
           </div>
-        </form>
+        </div>
       </AuthLayout>
     );
   }
 
-  // Step 1: Email entry form
+  // Initial Email Entry Screen
   return (
     <AuthLayout
       title="Forgot Password"
-      subtitle="Enter your email address to continue"
+      subtitle="Enter your email address to receive a reset link"
     >
-      <form onSubmit={handleEmailSubmit} className="space-y-6">
+      <form onSubmit={handleResetRequest} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-gray-900">
             Email Address
@@ -237,21 +171,15 @@ export default function ForgotPassword() {
               required
             />
           </div>
-          {errors.email && (
+          {error && (
             <p className="text-sm text-red-600 flex items-center gap-1">
-              <XCircle className="w-4 h-4" />
-              {errors.email}
+              {error}
             </p>
           )}
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          size="lg"
-          disabled={isLoading}
-        >
-          {isLoading ? "Verifying..." : "Continue"}
+        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+          {isLoading ? "Sending Reset Link..." : "Send Reset Link"}
         </Button>
 
         <div className="text-center">
