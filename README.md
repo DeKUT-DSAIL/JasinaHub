@@ -856,6 +856,6 @@ See the full [Entity-relationship diagram](#entity-relationship-diagram) in the 
 
 ---
 
-[Live preview](https://www.dsail-health.vercel.app)
+[Live preview](https://www.jasinahub.vercel.app)
 
 Centre for Data Science and Artificial Intelligence (DSAIL) ©2026
