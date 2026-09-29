@@ -137,9 +137,7 @@ This section provides visual documentation of JasinaHub's architecture, data mod
   <img src="public/docs/data-collection-platform-general-system.png" alt="JasinaHub general system architecture: UI layer, gateway, storage, and resulting dataset" width="600" />
 </p>
 
-<p align="center">
-  <img src="public/docs/data-collection-platform-flowchart.png" alt="JasinaHub end-to-end flowchart: signup, consent, recording, validation, transcription, and ASR export" width="700" />
-</p>
+
 
 ### High-level architecture
 
@@ -491,173 +489,16 @@ sequenceDiagram
   UI->>Tr: Show success feedback
 ```
 
-#### Flowchart — End-to-end data lifecycle
+#### Flowchart
 
 The full journey of a single piece of data, from a volunteer's signup to its appearance in the exported ASR dataset.
 
-```mermaid
-flowchart TD
-  Start([User signs up]) --> Verify{Email<br/>verified?}
-  Verify -->|No| WaitVerify[Wait for verification email]
-  WaitVerify --> Verify
-  Verify -->|Yes| Login[Login to dashboard]
-  Login --> Consent{Voice recording<br/>consent given?}
-  Consent -->|No| ShowConsent[Show ConsentModal]
-  ShowConsent --> Consent
-  Consent -->|Yes| Pick[Pick category & question]
-  Pick --> Record[Record audio<br/>via MediaRecorder]
-  Record --> Backup[Save to IndexedDB / localStorage]
-  Backup --> Upload{Upload to<br/>Storage OK?}
-  Upload -->|No| Retry[Show RecoveryDialog<br/>on next visit]
-  Retry --> Upload
-  Upload -->|Yes| Insert[INSERT voice_responses<br/>status=pending]
-  Insert --> Review{Admin<br/>review}
-  Review -->|Reject| Rejected[status=rejected]
-  Review -->|Accept| Accepted[status=accepted]
-  Accepted --> Claim[Transcriber claims<br/>via claim_random_transcription]
-  Claim --> Type[Transcribe text]
-  Type --> Submit[INSERT transcriptions]
-  Submit --> Verify2{Quality<br/>check}
-  Verify2 -->|Reject| Reclaim[Release lock,<br/>back to pool]
-  Reclaim --> Claim
-  Verify2 -->|Accept| Pair[Audio + text pair ready]
-  Pair --> Export([Admin exports ZIP<br/>for ASR training])
-  Rejected --> End([End])
-```
-
-#### State machine — Response, transcription & lock lifecycles
-
-The combined state transitions for `voice_responses.status`, `transcriptions.status`, and `transcription_locks` expiry behavior.
-
-```mermaid
-stateDiagram-v2
-  [*] --> Pending : volunteer submits recording
-  Pending --> Accepted : admin accepts
-  Pending --> Rejected : admin rejects
-  Accepted --> Claimed : transcriber claims task
-  Claimed --> LockActive : INSERT lock (30 min TTL)
-  LockActive --> LockExpired : timer expires
-  LockExpired --> Claimed : back to pool
-  LockActive --> LockReleased : transcriber submits or cancels
-  LockReleased --> Submitted : INSERT transcription
-  Submitted --> Edited : edit (max 3)
-  Edited --> Submitted : save
-  Submitted --> Verified : admin verifies
-  Submitted --> RejectedTx : admin rejects
-  RejectedTx --> Claimed : back to pool
-  Verified --> [*] : included in ASR export
-  Rejected --> [*]
-```
+<p align="center">
+  <img src="public/docs/data-collection-platform-flowchart.png" alt="JasinaHub end-to-end flowchart: signup, consent, recording, validation, transcription, and ASR export" width="700" />
+</p>
 
 ### User-centric diagrams
-
-#### Use case diagram
-
-The full set of capabilities the platform offers, grouped by the actor who triggers them.
-
-```mermaid
-graph LR
-
-    %% Primary and Secondary Actors
-
-    Volunteer((Recording Volunteer))
-
-    Transcriber((Transcriber))
-
-    Admin((Administrator))
-
-    Storage[("Storage Service <br>(System Actor)")]
-
-    MediaRec[["MediaRecorder API <br>(System Actor)"]]
-
-    subgraph JasinaHub System Boundary
-
-        %% Volunteer Use Cases
-
-        UC_Signup(Sign Up & Verify Email)
-
-        UC_Consent(Grant Audio Consent)
-
-        UC_Prompt(Display Health Prompt)
-
-        UC_Record(Record Audio Response)
-
-        UC_SaveLocal(Save Recording Locally <br> via IndexedDB)
-
-        UC_Upload(Upload Audio to Storage)
-
-        UC_Recover(Recover Interrupted Upload)
-
-        %% Transcriber Use Cases
-
-        UC_ReqRole(Request Transcriber Role)
-
-        UC_Guidelines(Accept Verbatim Guidelines)
-
-        UC_Claim(Claim Random Recording <br> via Pessimistic Lock)
-
-        UC_Transcribe(Transcribe Audio)
-
-        %% Admin Use Cases
-
-        UC_ModAudio(Moderate Audio Responses <br> Accept/Reject)
-
-        UC_ValTrans(Validate Transcriptions)
-
-        UC_Export(Export Dataset ZIP <br> for ASR Training)
-
-        UC_Monitor(Monitor Analytics & Logs)
-
-    end
-
-    %% Volunteer Connections
-
-    Volunteer --> UC_Signup
-
-    Volunteer --> UC_Consent
-
-    Volunteer --> UC_Record
-
-    Volunteer --> UC_SaveLocal
-
-    Volunteer --> UC_Upload
-
-    %% Volunteer Includes/Extends
-
-    UC_Record -.->|<<include>>| UC_Prompt
-
-    UC_Upload -.->|<<extend>>| UC_Recover
-
-    UC_Record --- MediaRec
-
-    UC_Upload --- Storage
-
-    %% Transcriber Connections
-
-    Transcriber --> UC_ReqRole
-
-    Transcriber --> UC_Guidelines
-
-    Transcriber --> UC_Claim
-
-    Transcriber --> UC_Transcribe
-
-    %% Admin Connections
-
-    Admin --> UC_ModAudio
-
-    Admin --> UC_ValTrans
-
-    Admin --> UC_Export
-
-    Admin --> UC_Monitor
-
-    
-
-    UC_Export --- Storage
-```
-
-#### User journey — Volunteer
+#### Volunteer
 
 ```mermaid
 journey
@@ -678,7 +519,7 @@ journey
     Resume next session: 5: Volunteer
 ```
 
-#### User journey — Transcriber
+#### Transcriber
 
 ```mermaid
 journey
@@ -700,7 +541,7 @@ journey
     View own transcriptions: 5: Transcriber
 ```
 
-#### User journey — Admin
+#### Admin
 
 ```mermaid
 journey
