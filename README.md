@@ -131,137 +131,19 @@ JasinaHub follows a three-tier architecture: a React single-page application on 
 
 ## Diagrams
 
-This section provides visual documentation of JasinaHub's architecture, data model, behavior, and user flows. All diagrams are written in Mermaid and render natively on GitHub.
+This section provides visual documentation of JasinaHub's architecture and user flows. 
 
 <p align="center">
   <img src="public/docs/data-collection-platform-general-system.png" alt="JasinaHub general system architecture: UI layer, gateway, storage, and resulting dataset" width="600" />
 </p>
 
+#### Flowchart
 
+The full journey of a single piece of data, from a volunteer's signup to its appearance in the exported ASR dataset.
 
-### High-level architecture
-
-#### High-level system architecture
-
-End-to-end view of JasinaHub — from end users (Volunteers, Transcribers, Admins), through the React PWA frontend and Lovable Cloud backend (Auth, PostgreSQL with RLS, Object Storage, Edge Functions, Realtime), down to the curated ASR dataset that feeds downstream speech model training (wav2vec 2.0, Whisper, MMS).
-
-```mermaid
-graph LR
-  subgraph Users ["End Users"]
-    U1["Volunteers<br/>(Voice Contributors)"]
-    U2["Transcribers<br/>(Text Annotators)"]
-    U3["Administrators<br/>(QA & Curators)"]
-  end
-
-  subgraph Frontend ["Frontend - Progressive Web App"]
-    F1["React 18 + Vite + TypeScript"]
-    F2["Tailwind + Shadcn UI"]
-    F3["IndexedDB Offline Cache"]
-    F4["MediaRecorder API"]
-    F5["Service Worker / PWA Shell"]
-  end
-
-  subgraph Backend ["Lovable Cloud - Backend as a Service"]
-    B1["Auth Service<br/>(Email + Password)"]
-    B2["PostgreSQL Database<br/>(9 tables, RLS enforced)"]
-    B3["Object Storage<br/>(voice-recordings bucket)"]
-    B4["Edge Functions - Deno<br/>(reset-password, migrate-drive-audio,<br/>upload-to-gcs)"]
-    B5["Realtime Channels<br/>(presence + activity logs)"]
-  end
-
-  subgraph Logic ["Domain Logic in Postgres"]
-    L1["claim_random_transcription()<br/>Atomic locking RPC"]
-    L2["has_role() SECURITY DEFINER<br/>RBAC enforcement"]
-    L3["get_question_counts()<br/>Question retirement"]
-    L4["Triggers + RLS policies"]
-  end
-
-  subgraph Output ["ASR Dataset Pipeline"]
-    O1["Audio Files<br/>(WebM / WAV)"]
-    O2["Verbatim Transcriptions<br/>(native orthography)"]
-    O3["Metadata Manifest<br/>(JSON / CSV)"]
-    O4["Downstream ASR Training<br/>(wav2vec 2.0 / Whisper / MMS)"]
-  end
-
-  U1 -->|Records audio| Frontend
-  U2 -->|Submits transcriptions| Frontend
-  U3 -->|Reviews + exports| Frontend
-
-  Frontend -->|HTTPS / JWT| Backend
-  F3 -.->|Auto-recovery on reconnect| B3
-
-  B2 --> Logic
-  Logic --> B2
-
-  B3 --> O1
-  B2 --> O2
-  B2 --> O3
-  O1 --> O4
-  O2 --> O4
-  O3 --> O4
-```
-
-#### System context diagram
-
-Shows JasinaHub as a single system in its environment, the people who interact with it, and the external systems it depends on or produces.
-
-```mermaid
-graph TB
-  Vol["Volunteer<br/>(records voice responses)"]
-  Tr["Transcriber<br/>(transcribes audio)"]
-  Adm["Admin<br/>(reviews & exports data)"]
-
-  subgraph FN ["JasinaHub Platform"]
-    SYS["Voice Data Collection<br/>& Transcription System"]
-  end
-
-  Cloud["Lovable Cloud<br/>(Auth, Postgres, Storage,<br/>Edge Functions, Realtime)"]
-  ASR["ASR Dataset<br/>(audio + transcription pairs)"]
-  Browser["Modern Web Browser<br/>(MediaRecorder API)"]
-
-  Vol -->|Records audio responses| SYS
-  Tr -->|Submits transcriptions| SYS
-  Adm -->|Reviews, verifies, exports| SYS
-  SYS -->|Reads/writes data, auth, files| Cloud
-  SYS -->|Captures audio via| Browser
-  SYS -->|Produces| ASR
-```
-
-#### Container diagram
-
-Zooms into the JasinaHub system to show the major deployable units (containers) and how they communicate.
-
-```mermaid
-graph TB
-  subgraph Client ["Client (User's Device)"]
-    SPA["React SPA<br/>[React 18 + Vite + TS]"]
-    SW["PWA Service Worker<br/>[Workbox]"]
-    IDB["IndexedDB / localStorage<br/>(offline recording cache)"]
-  end
-
-  subgraph LovableCloud ["Lovable Cloud (Backend-as-a-Service)"]
-    Auth["GoTrue Auth<br/>[email/password]"]
-    REST["PostgREST API<br/>[HTTPS / JSON]"]
-    RT["Realtime Server<br/>[WebSocket]"]
-    EF["Edge Functions<br/>[Deno runtime]"]
-    DB[("PostgreSQL<br/>+ RLS Policies")]
-    Bucket[("Storage Bucket<br/>voice-recordings")]
-  end
-
-  SPA -->|HTTPS| Auth
-  SPA -->|HTTPS / JSON| REST
-  SPA -->|WebSocket| RT
-  SPA -->|HTTPS invoke| EF
-  SPA -->|Cache shell + assets| SW
-  SPA -->|Persist pending uploads| IDB
-  REST --> DB
-  RT --> DB
-  EF --> DB
-  EF --> Bucket
-  SPA -->|Signed URL upload/download| Bucket
-```
-
-### Structural and data diagrams
+<p align="center">
+  <img src="public/docs/data-collection-platform-flowchart.png" alt="JasinaHub end-to-end flowchart: signup, consent, recording, validation, transcription, and ASR export" width="700" />
+</p>
 
 #### Entity-relationship diagram
 
@@ -361,73 +243,6 @@ erDiagram
   categories ||--o{ user_progress : "tracked_in"
 ```
 
-#### UML component diagram
-
-Layered view of the codebase: page components depend on core feature modules, which rely on client infrastructure, all backed by Lovable Cloud services that produce the ASR dataset.
-
-```mermaid
-graph TB
-  subgraph ClientLayer ["Client Layer - React SPA"]
-    direction TB
-    subgraph Pages ["Page Components"]
-      P1["Dashboard"]
-      P2["Questions"]
-      P3["Transcribe"]
-      P4["Admin Panel"]
-      P5["Auth Pages"]
-    end
-    subgraph Core ["Core Modules"]
-      C1["VoiceRecorder / MinimalRecorder"]
-      C2["AudioWaveform"]
-      C3["CategoryCard"]
-      C4["QuestionCard"]
-      C5["TranscriptionGuidelines"]
-    end
-    subgraph Infra ["Client Infrastructure"]
-      I1["React Query - State"]
-      I2["React Router - Navigation"]
-      I3["IndexedDB - Offline Storage"]
-      I4["Service Worker - PWA"]
-      I5["Haptic / Gesture Hooks"]
-    end
-  end
-
-  subgraph Backend ["Backend-as-a-Service Layer"]
-    direction TB
-    subgraph AuthGrp ["Authentication"]
-      A1["GoTrue Auth Service"]
-      A2["RLS Policies"]
-      A3["has_role SECURITY DEFINER"]
-    end
-    subgraph Data ["Data Layer"]
-      D1["PostgreSQL Database"]
-      D2["9 Tables with RLS"]
-      D3["DB Functions"]
-    end
-    subgraph Services ["Services"]
-      S1["Object Storage"]
-      S2["Edge Functions - Deno"]
-      S3["Realtime Subscriptions"]
-    end
-  end
-
-  subgraph Output ["ASR Dataset Output"]
-    O1["Audio Files - WebM/WAV"]
-    O2["Transcription Text"]
-    O3["Metadata - JSON/CSV"]
-  end
-
-  Pages --> Core
-  Core --> Infra
-  Infra --> Backend
-  I1 --> D1
-  C1 --> S1
-  P5 --> A1
-  A2 --> D2
-  Data --> Output
-  S1 --> Output
-```
-
 ### Behavioral and flow diagrams
 
 #### Sequence diagram — Voice recording pipeline
@@ -488,14 +303,6 @@ sequenceDiagram
   DB-->>UI: Confirm submission
   UI->>Tr: Show success feedback
 ```
-
-#### Flowchart
-
-The full journey of a single piece of data, from a volunteer's signup to its appearance in the exported ASR dataset.
-
-<p align="center">
-  <img src="public/docs/data-collection-platform-flowchart.png" alt="JasinaHub end-to-end flowchart: signup, consent, recording, validation, transcription, and ASR export" width="700" />
-</p>
 
 ### User-centric diagrams
 #### Volunteer
