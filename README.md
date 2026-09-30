@@ -133,7 +133,7 @@ JasinaHub follows a three-tier architecture: a React single-page application on 
 This section provides visual documentation of JasinaHub's architecture and user flows. 
 
 <p align="center">
-  <img src="public/docs/data-collection-platform-general-system.png" alt="JasinaHub general system architecture: UI layer, gateway, storage, and resulting dataset" width="600" />
+  <img src="public/docs/data-collection-platform-general-system.png" alt="JasinaHub general system architecture: UI layer, gateway, storage, and resulting dataset" width="300" />
 </p>
 
 #### Flowchart
