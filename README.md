@@ -18,9 +18,21 @@ A voice data collection platform designed for gathering and managing audio recor
   - [Structural and data diagrams](#structural-and-data-diagrams)
   - [Behavioral and flow diagrams](#behavioral-and-flow-diagrams)
   - [User-centric diagrams](#user-centric-diagrams)
-- [Getting Started](#getting-started)
+- [Database Architecture & Schema](#database-architecture--schema)
+  - [Database System Architecture](#database-system-architecture)
+  - [Entity-Relationship Diagram](#entity-relationship-diagram)
+  - [Core Tables Catalog](#core-tables-catalog)
+  - [Stored Procedures & RPCs](#stored-procedures--rpcs)
+  - [Storage Buckets](#storage-buckets)
+- [Getting Started & Installation](#getting-started--installation)
+  - [1. Prerequisites](#1-prerequisites)
+  - [2. Clone & Local App Installation](#2-clone--local-app-installation)
+  - [3. Database Setup (Supabase Cloud — No Docker Required)](#3-database-setup-supabase-cloud--no-docker-required)
+  - [4. Environment Variables](#4-environment-variables)
+  - [5. Run the Application](#5-run-the-application)
+  - [6. Create Your First Admin Account](#6-create-your-first-admin-account)
+  - [7. Verifying the Installation](#7-verifying-the-installation)
 - [Project Structure](#project-structure)
-- [Database Schema](#database-schema)
 - [Security](#security)
 - [Contributing](#contributing)
 
@@ -367,104 +379,304 @@ journey
     Browse activity logs: 4: Admin
 ```
 
-## Getting Started
+## Database Architecture & Schema
 
-### Prerequisites
+JasinaHub leverages PostgreSQL powered by Supabase for its backend, combining relational database structures, automated triggers, pessimistic concurrency locks, Row Level Security (RLS), and object storage buckets.
 
-- Node.js 18+ or Bun
-- Git
+### Database System Architecture
 
-### Installation
+The following diagram illustrates how the frontend connects to the database components, security barriers, and storage services:
+
+```mermaid
+flowchart TD
+  subgraph Client ["Client Layer (Browser)"]
+    App["React PWA (Vite + TypeScript)"]
+  end
+
+  subgraph Gateway ["Supabase Infrastructure"]
+    AuthSvc["Supabase Auth Service"]
+    PostgREST["PostgREST Data API"]
+    StorageSvc["Supabase Storage Service"]
+  end
+
+  subgraph Database ["PostgreSQL Relational Engine"]
+    subgraph Identity ["Auth & Identity Management"]
+      AuthUsers[("auth.users")]
+      ProfileTrigger{"Trigger: handle_new_user()"}
+      Profiles[("public.profiles\n(Demographics, Consent, Pseudonyms)")]
+      UserRoles[("public.user_roles\n(admin | user)")]
+    end
+
+    subgraph Security ["Security & Access Control"]
+      RLS{"Row Level Security (RLS)"}
+      RoleFunc["has_role(uid, 'admin')\nSECURITY DEFINER"]
+    end
+
+    subgraph CoreData ["Voice & Content Pipeline"]
+      Categories[("public.categories")]
+      Questions[("public.questions")]
+      VoiceResponses[("public.voice_responses\n(status: pending | accepted | rejected)")]
+      Transcriptions[("public.transcriptions\n(Verbatim text + edits)")]
+      Locks[("public.transcription_locks\n(15-min TTL concurrency lock)")]
+    end
+
+    subgraph AnalyticsAudit ["Auditing & Engagement"]
+      Progress[("public.user_progress")]
+      ActivityLogs[("public.user_activity_logs")]
+      Feedback[("public.feedback_questions\nfeedback_submissions\nfeedback_answers")]
+    end
+
+    subgraph StoredProcs ["Custom RPC Procedures"]
+      RPC_Claim["claim_random_transcription()"]
+      RPC_Release["release_transcription_lock()"]
+      RPC_Counts["get_question_counts()"]
+      RPC_Stats["get_admin_chart_data()\nget_transcription_stats()"]
+    end
+  end
+
+  subgraph StorageBuckets ["Object Storage Buckets"]
+    BucketVoice[("voice-recordings\n(Public WebM/Opus audio)")]
+    BucketImages[("images\n(Question illustrations)")]
+  end
+
+  %% Client connections
+  App -->|"Sign In / Sign Up"| AuthSvc
+  App -->|"Queries & Mutations (supabase-js)"| PostgREST
+  App -->|"Audio Upload & Playback"| StorageSvc
+
+  %% Gateway routing
+  AuthSvc -->|"Creates user"| AuthUsers
+  AuthUsers -->|"AFTER INSERT"| ProfileTrigger
+  ProfileTrigger -->|"Auto-provisions"| Profiles
+  PostgREST --> RLS
+  RLS -.->|"Evaluates role"| RoleFunc
+  RoleFunc -.->|"Reads"| UserRoles
+
+  %% Data relations
+  RLS --> CoreData
+  RLS --> AnalyticsAudit
+  RLS --> StoredProcs
+
+  Categories -->|"1:N"| Questions
+  Questions -->|"1:N"| VoiceResponses
+  VoiceResponses -->|"1:N"| Transcriptions
+  VoiceResponses -.->|"1:1 Active Lock"| Locks
+
+  %% Storage integration
+  StorageSvc --> BucketVoice
+  StorageSvc --> BucketImages
+  VoiceResponses -.->|"Stores audio URL"| BucketVoice
+```
+
+### Core Tables Catalog
+
+| Table | Description | Primary Key | Key Foreign Keys | Access Permissions & Policies |
+|---|---|---|---|---|
+| `profiles` | Extended profile: first/last name, phone, age, gender, dialect, pseudonym (`JSN-XXXX`), consent flags, and account verification | `id (UUID)` | `id → auth.users.id` | Authenticated users view & edit their own profile; admins can view and verify all profiles |
+| `user_roles` | Role assignment table (`admin` or `user`) | `id (UUID)` | `user_id → auth.users.id` | Users can view their own roles; only admins can grant or modify roles |
+| `categories` | Thematic prompt groupings (e.g., General Health, Nutrition, Maternal Health) | `id (UUID)` | None | Viewable by all; only admins can create, update, or delete |
+| `questions` | Question prompts associated with categories, with optional visual illustrations | `id (UUID)` | `category_id → categories.id` | Viewable by authenticated users; managed exclusively by admins |
+| `voice_responses` | Submissions of recorded audio with status (`pending`, `accepted`, `rejected`) | `id (UUID)` | `user_id → auth.users.id`, `question_id → questions.id` | Volunteers view/create their own recordings; transcribers view assigned ones; admins review all |
+| `transcriptions` | Text transcriptions of spoken audio with revision count tracking | `id (UUID)` | `voice_response_id → voice_responses.id`, `user_id → auth.users.id` | Transcribers view & edit their own pending transcriptions; admins view and validate all |
+| `transcription_locks` | Pessimistic locking mechanism preventing concurrent claims on the same recording | `id (UUID)` | `voice_response_id → voice_responses.id`, `user_id → auth.users.id` | Managed automatically by `claim_random_transcription` and `release_transcription_lock` |
+| `user_progress` | Per-category completion counters and last answered question tracking | `id (UUID)` | `user_id → auth.users.id`, `category_id → categories.id` | Users manage and read their own progress; admins have oversight |
+| `user_activity_logs` | Audit trail recording user interactions, route transitions, and submissions | `id (UUID)` | `user_id → auth.users.id` | Users can append log entries; admins can view analytics logs |
+| `feedback_questions` | Dynamic survey questions presented to users | `id (UUID)` | None | Active questions viewable by authenticated users; admins manage questions |
+| `feedback_submissions` | Feedback response submission containers | `id (UUID)` | `user_id → auth.users.id` | Authenticated users insert; admins view |
+| `feedback_answers` | Individual question answers (supports text, numeric rating, boolean, or choices) | `id (UUID)` | `submission_id → feedback_submissions.id`, `question_id → feedback_questions.id` | Authenticated users insert; admins view |
+| `password_reset_codes` | Time-limited 6-digit verification codes for secure password resets | `id (UUID)` | None | Restricted to `service_role` (Edge Functions) |
+
+### Stored Procedures & RPCs
+
+All PostgreSQL RPC procedures live under `public` and are invoked directly from the frontend via `supabase.rpc(name, params)`:
+
+- **`has_role(_user_id uuid, _role app_role) -> boolean`**  
+  Checks if a given user holds a role. Implemented as `SECURITY DEFINER` to allow RLS policies to evaluate permissions without infinite recursion.
+- **`claim_random_transcription(_user_id uuid) -> TABLE`**  
+  Atomically assigns a pending/accepted recording to an approved transcriber, cleans up expired locks, and writes a 15-minute TTL lock into `transcription_locks` to prevent race conditions.
+- **`release_transcription_lock(_user_id uuid) -> void`**  
+  Releases any active lock held by the transcriber if they navigate away or complete their submission.
+- **`get_question_counts() -> TABLE(question_id uuid, unique_user_count bigint)`**  
+  Aggregates unique responses per question so the client can automatically retire prompts after 3 unique contributions.
+- **`get_admin_chart_data() -> json`**  
+  Admin-only aggregation returning response growth over time, transcription velocity, duration distributions, and sparklines.
+- **`get_transcription_stats() -> json`**  
+  Admin-only procedure compiling counts of unique transcribed, verified, pending, and accepted recordings.
+
+### Storage Buckets
+
+| Bucket Name | Public Access | File Size Limit | Allowed MIME Types | Purpose |
+|---|---|---|---|---|
+| `voice-recordings` | Yes (Public URL) | Standard (50 MB) | Audio (`audio/webm`, `audio/ogg`, `audio/*`) | Stores recorded volunteer voice files under `<user-id>/<uuid>.webm` |
+| `images` | Yes (Public URL) | 5 MB | Images (`jpeg`, `png`, `gif`, `webp`) | Stores category/question illustrative assets under `question-images/` |
+
+---
+
+## Getting Started & Installation
+
+JasinaHub is designed to be set up quickly **without requiring Docker**. You run the frontend application locally on your machine, connecting it directly to a free cloud database instance hosted on Supabase.
+
+### 1. Prerequisites
+
+- **Node.js 18+** or **Bun 1.x**
+- **Git**
+- A free [Supabase](https://supabase.com) account (no credit card required)
+
+### 2. Clone & Local App Installation
+
+Open your terminal or PowerShell and clone the repository:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd <project-directory>
+git clone https://github.com/DeKUT-DSAIL/JasinaHub.git
+cd JasinaHub
 
-# Install dependencies
+# Install application dependencies
 npm install
+```
 
-# Start development server
+### 3. Database Setup (Supabase Cloud — No Docker Required)
+
+Setting up the entire database takes under 2 minutes using the Supabase Web SQL Editor:
+
+1. **Create a Supabase Project:**
+   - Log in to [supabase.com/dashboard](https://supabase.com/dashboard).
+   - Click **New project**, choose your organization, enter a name (e.g. `jasinahub-dev`), set a database password, and select your preferred region.
+   - Wait ~1 minute for the project to finish provisioning.
+
+2. **Open the SQL Editor:**
+   - In the left sidebar of your Supabase project dashboard, click on the **SQL Editor** icon (`>_`).
+
+3. **Run the Complete Setup Script:**
+   - Click **New query** (or the `+` icon).
+   - Open the setup file from this repository: [`supabase/setup_complete.sql`](supabase/setup_complete.sql).
+   - Copy the entire contents of [`supabase/setup_complete.sql`](supabase/setup_complete.sql), paste it into the SQL Editor, and click the green **Run** button (or press `Ctrl+Enter` / `Cmd+Enter`).
+
+> [!NOTE]
+> The setup script is fully idempotent (`IF NOT EXISTS` / `CREATE OR REPLACE`). It automatically creates all custom enums, 13 tables, indexes, automatic user profile trigger hooks, RPC stored procedures, RLS security policies, storage buckets (`voice-recordings` and `images`), and baseline seed categories & questions.
+
+### 4. Environment Variables
+
+1. In the root of your local project, copy the template file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Retrieve your Supabase API keys:
+   - In your Supabase dashboard, navigate to **Project Settings** (gear icon) → **API**.
+   - Copy the **Project URL** and the **anon / public** API Key.
+
+3. Update `.env` with your values:
+   ```env
+   VITE_SUPABASE_URL="https://your-project-id.supabase.co"
+   VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   VITE_SUPABASE_PROJECT_ID="your-project-id"
+   ```
+
+### 5. Run the Application
+
+Start the local Vite development server:
+
+```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:8080`
+Open your browser and navigate to **`http://localhost:8080`**. You should see the JasinaHub landing page with seed categories (*General Health*, *Nutrition*, *Maternal Health*) loaded from your Supabase database.
 
-### Environment Variables
+### 6. Create Your First Admin Account
 
-Environment variables are automatically managed by Lovable Cloud. For local dev, copy `.env.example` to `.env` and fill in the values:
+1. In your browser at `http://localhost:8080`, click **Sign In** and switch to **Sign Up** (or visit `http://localhost:8080/signup`).
+2. Complete the registration form with your name, email, and password.
+3. Once registered, switch back to your **Supabase Dashboard → SQL Editor**, paste the following snippet, replace with your signup email, and click **Run**:
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/public key |
-| `VITE_SUPABASE_PROJECT_ID` | Project identifier |
+```sql
+-- Promote your user account to Administrator and verify profile
+UPDATE public.profiles 
+SET verified = true 
+WHERE email = 'your-email@example.com';
 
-### More docs
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin'::app_role 
+FROM auth.users 
+WHERE email = 'your-email@example.com'
+ON CONFLICT (user_id, role) DO NOTHING;
+```
 
-- [Quick start](QUICKSTART.md) — 5-minute setup
-- [Architecture](docs/ARCHITECTURE.md) — layers, data flow, state
-- [API reference](docs/API.md) — tables, RPCs, edge functions, storage
-- [Database & migrations](docs/DATABASE.md) — schema, seed, admin promotion
-- [Local Supabase setup](docs/LOCAL_SUPABASE.md) — full offline stack
-- [Testing](docs/TESTING.md) — in-app test harness
-- [Deployment](docs/DEPLOYMENT.md) — Lovable / Vercel / Netlify
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — common errors
-- [Demo accounts](docs/DEMO.md)
-- [Contributing](CONTRIBUTING.md)
+4. Refresh your JasinaHub web tab or sign in again. You will now have administrative privileges and access to the **Admin Dashboard** (`/admin`).
+
+### 7. Verifying the Installation
+
+JasinaHub includes a built-in diagnostic test runner to verify your database configuration:
+
+1. Sign in with your admin account.
+2. Navigate to **Admin Panel** → **Tests** tab (or browse to `http://localhost:8080/admin`).
+3. Click **Run all tests**.
+4. The test harness runs automated checks across:
+   - **Smoke Tests**: Basic connectivity and session persistence.
+   - **Auth Suite**: Verification flags and session tokens.
+   - **RLS Suite**: Confirming non-admin and admin table access boundaries.
+   - **Storage Suite**: Checking `voice-recordings` bucket read/write permissions.
+   - **RPC Suite**: Verifying stored procedures like `claim_random_transcription` and stats queries.
+
+All suites should display green checkmarks.
+
+### Database Troubleshooting
+
+| Issue / Error | Likely Cause | Solution |
+|---|---|---|
+| **White screen or immediate connection error** | Missing or incorrect `.env` variables | Confirm `.env` exists in root, contains `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, and restart Vite (`npm run dev`). |
+| **`permission denied for table ...` (42501)** | Missing grant or unverified account | Ensure you ran the complete [`supabase/setup_complete.sql`](supabase/setup_complete.sql) script which includes table grants to `authenticated`. |
+| **User profile not created after signup** | Trigger was not installed | Verify in Supabase Dashboard → Database → Triggers that `on_auth_user_created` exists on `auth.users`. Re-run section 4 of the SQL script. |
+| **Audio recording upload fails (`Bucket not found`)** | Storage bucket missing | In Supabase Dashboard → Storage, verify the `voice-recordings` bucket exists and is marked **Public**. |
+| **Cannot claim recordings for transcription** | No accepted recordings or transcriber unapproved | Transcribers require `profiles.transcription_approved = true`. Also, recordings must have `status = 'accepted'` before being claimable. |
+
+---
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── Admin/           # Admin panel components
-│   ├── Auth/            # Authentication guards and layouts
-│   ├── Dashboard/       # User dashboard components
-│   ├── Questions/       # Question display and recording
-│   ├── Transcription/   # Transcription guidelines
-│   ├── VoiceRecording/  # Audio recording components
-│   └── ui/              # shadcn/ui components
+│   ├── Admin/           # Admin panel, user management, and dataset review
+│   ├── Auth/            # Authentication guards and forms
+│   ├── Dashboard/       # Volunteer dashboard and category progress
+│   ├── Questions/       # Prompt navigation and visual cards
+│   ├── Transcription/   # Transcription guidelines and audio review
+│   ├── VoiceRecording/  # MediaRecorder and live audio waveforms
+│   └── ui/              # shadcn/ui components (Radix primitives)
 ├── hooks/
 │   ├── useActivityTracker.ts    # User activity logging
-│   ├── usePresenceTracking.ts   # Real-time presence
-│   ├── useHapticFeedback.ts     # Mobile haptics
-│   ├── usePullToRefresh.ts      # Pull-to-refresh gesture
-│   └── useSwipeGesture.ts       # Touch gestures
+│   ├── usePresenceTracking.ts   # Real-time WebSocket presence
+│   ├── useHapticFeedback.ts     # Mobile haptic feedback
+│   ├── usePullToRefresh.ts      # Mobile touch refresh gesture
+│   └── useSwipeGesture.ts       # Mobile question navigation
 ├── integrations/
-│   └── supabase/        # Auto-generated client and types
-├── pages/               # Route components
-├── services/            # External service integrations
-├── utils/               # Utility functions
-└── lib/                 # Shared utilities
+│   └── supabase/        # Supabase client and auto-generated database types
+├── pages/               # Application route views (Dashboard, Transcribe, Admin, ...)
+├── services/            # Audio recording and external integrations
+├── utils/               # Audio helpers and IndexedDB offline fallback queue
+└── lib/
+    └── tests/           # Built-in in-app test harness suites
 
 supabase/
-├── functions/           # Edge functions
-│   ├── reset-password/  # Password reset handler
-│   └── upload-to-gcs/   # File upload handler
-├── migrations/          # Database migrations
-└── config.toml          # Supabase configuration
+├── setup_complete.sql   # Standalone idempotent setup SQL for Supabase SQL Editor
+├── seed.sql             # Baseline starter categories and questions
+├── migrations/          # Incremental database migration files
+└── functions/           # Edge Functions (reset-password, migrate-drive-audio)
 ```
 
-## Database Schema
+### Documentation Index
 
-### Core Tables
+- [Quick Start](QUICKSTART.md) — 5-minute fast setup
+- [Database Guide](docs/DATABASE.md) — Schema, RPCs, seed data, and migrations
+- [Architecture Guide](docs/ARCHITECTURE.md) — System layers, offline resilience, and data flow
+- [API Reference](docs/API.md) — REST PostgREST tables, RPC catalog, and storage buckets
+- [In-App Testing](docs/TESTING.md) — Test suites and diagnostic runner
+- [Deployment](docs/DEPLOYMENT.md) — Deploying frontend to Vercel/Netlify
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — Common runtime and build issues
+- [Contributing](CONTRIBUTING.md) — Guidelines for code and contributions
 
-| Table | Description |
-|-------|-------------|
-| `profiles` | User profile data with demographic metadata and verification status |
-| `categories` | Thematic groupings for health-related questions |
-| `questions` | Individual prompts within categories |
-| `voice_responses` | Audio recordings with three-state review status |
-| `transcriptions` | Text transcriptions of voice responses |
-| `transcription_locks` | Atomic locking mechanism for transcription assignment |
-| `user_progress` | Per-category completion tracking |
-| `user_roles` | Role assignments (admin/user) |
-| `user_activity_logs` | Audit trail of user actions |
-
-### Key Relationships
-
-See the full [Entity-relationship diagram](#entity-relationship-diagram) in the Diagrams section for attributes and cardinality.
+---
 
 ## Security
 

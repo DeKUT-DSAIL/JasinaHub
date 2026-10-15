@@ -1,83 +1,114 @@
-# Database — Migrations & Seed
+# Database — Architecture, Setup & Migrations
 
-All schema, RLS, RPCs, and grants live in `supabase/migrations/*.sql`. Migrations are applied in filename (timestamp) order.
+JasinaHub uses PostgreSQL managed by Supabase, combining relational tables, Row-Level Security (RLS), custom RPC functions, automated triggers, and object storage buckets.
 
-## Apply migrations
+---
 
-### Against a local Supabase stack
+## 1. Quick Initial Setup (No Docker Required)
 
+For new developers setting up JasinaHub for the first time, you do **not** need Docker. You can provision your database in under 2 minutes:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In the left menu of your Supabase dashboard, click **SQL Editor** (`>_`).
+3. Click **New query**.
+4. Open the consolidated setup script in this repository: [`supabase/setup_complete.sql`](../supabase/setup_complete.sql).
+5. Copy the entire file, paste it into the SQL Editor, and click **Run**.
+
+This one-click script automatically configures:
+- All custom enums (`app_role`, `response_status`)
+- All 13 core relational tables and foreign keys
+- Automatic triggers (`set_profile_pseudonym` and `handle_new_user` on `auth.users`)
+- Stored procedures (`claim_random_transcription`, `release_transcription_lock`, `get_question_counts`, `get_admin_chart_data`, `get_transcription_stats`)
+- Row-Level Security (RLS) policies and table grants
+- Storage buckets (`voice-recordings` and `images`) with public playback policies
+- Starter seed data (categories, prompts, and feedback questions)
+
+---
+
+## 2. Advanced Migration Workflow (Supabase CLI)
+
+For developers who prefer using the CLI to track incremental migrations without Docker:
+
+### Link to your remote Supabase project
 ```bash
-supabase start           # first time only — spins up local Postgres + Auth + Storage
-supabase db reset        # drops the local DB and re-runs every migration + seed.sql
+supabase login
+supabase link --project-ref <your-project-ref>
 ```
 
-### Against a hosted project (Lovable Cloud / Supabase)
-
+### Apply pending migrations
 ```bash
-supabase link --project-ref <project-ref>
-supabase db push         # applies pending migrations
+supabase db push
 ```
 
-On Lovable Cloud, migrations are typically applied through the platform's migration tool — the SQL files are the source of truth.
-
-## Add a new migration
-
+### Create a new migration
 ```bash
 supabase migration new add_my_feature
-# edit supabase/migrations/<timestamp>_add_my_feature.sql
-supabase db reset        # re-run everything locally to confirm ordering
+# edit the generated file in supabase/migrations/<timestamp>_add_my_feature.sql
+supabase db push
 ```
 
-Every `CREATE TABLE public.<name>` **must** be followed in the same migration by:
+> [!IMPORTANT]
+> Whenever you add a new table via migration (`CREATE TABLE public.<name>`), you **must** include:
+> ```sql
+> GRANT SELECT, INSERT, UPDATE, DELETE ON public.<name> TO authenticated;
+> GRANT ALL ON public.<name> TO service_role;
+> ALTER TABLE public.<name> ENABLE ROW LEVEL SECURITY;
+> CREATE POLICY ... ;
+> ```
+> Without the `GRANT` statements, Supabase's PostgREST API returns `permission denied` even if RLS policies are valid.
+
+---
+
+## 3. Promoting a User to Administrator
+
+Supabase Auth manages user credentials. After signing up at `http://localhost:8080/signup`:
+
+1. Open your **Supabase Dashboard → SQL Editor**.
+2. Run the following query with your account email:
 
 ```sql
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.<name> TO authenticated;
-GRANT ALL ON public.<name> TO service_role;
-ALTER TABLE public.<name> ENABLE ROW LEVEL SECURITY;
-CREATE POLICY ... ;
+UPDATE public.profiles 
+SET verified = true 
+WHERE email = 'your-email@example.com';
+
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin'::app_role 
+FROM auth.users 
+WHERE email = 'your-email@example.com'
+ON CONFLICT (user_id, role) DO NOTHING;
 ```
 
-Without the grants the Data API returns `permission denied` — RLS alone is not enough.
+---
 
-## Seed data
+## 4. Schema & Entity Overview
 
-`supabase/seed.sql` runs automatically at the end of `supabase db reset`. It creates:
+See the full [Architecture & ERD Diagram in README.md](../README.md#database-architecture--schema).
 
-- 3 example categories (General Health, Nutrition, Maternal Health)
-- 6 example questions across those categories
-- 1 feedback question
+### Core Tables:
+- `profiles` — User profile, pseudonym (`JSN-XXXX`), demographic data, consent timestamp, and verification flag.
+- `user_roles` — Role assignments (`admin`, `user`).
+- `categories` — Thematic groupings for health questions.
+- `questions` — Health prompt questions linked to categories.
+- `voice_responses` — Audio recording submissions (`pending`, `accepted`, `rejected`).
+- `transcriptions` — Text transcriptions produced by transcribers.
+- `transcription_locks` — Atomic 15-minute locks preventing duplicate assignment.
+- `user_progress` — Per-category question completion metrics.
+- `user_activity_logs` — Audit log of user actions and navigation.
+- `feedback_questions`, `feedback_submissions`, `feedback_answers` — Survey feedback pipeline.
+- `password_reset_codes` — 6-digit short codes for password reset flow.
 
-It does **not** create users — Supabase Auth users are created through the app signup flow or the Supabase dashboard.
+---
 
-## Promoting a user to admin
+## 5. Storage Buckets
 
-After signing up, find your user id (Auth → Users) and run:
+- **`voice-recordings`** (Public): WebM/Opus audio files stored under `<user-id>/<uuid>.webm`. Public read allows transcribers and reviewers to stream audio without expired tokens.
+- **`images`** (Public): Visual cards for categories and questions under `question-images/`.
 
-```sql
-INSERT INTO public.user_roles (user_id, role) VALUES ('<your-uuid>', 'admin');
-UPDATE public.profiles SET verified = true WHERE id = '<your-uuid>';
-```
+---
 
-## Schema overview
+## 6. Backups
 
-See the [ERD in README.md](../README.md#entity-relationship-diagram). Core tables:
-
-- `profiles` — user profile + verification / consent flags
-- `user_roles` — role assignments (admin / user)
-- `categories`, `questions` — prompt hierarchy
-- `voice_responses` — audio submissions (status: pending / accepted / rejected)
-- `transcriptions`, `transcription_locks` — text pipeline with pessimistic locking
-- `user_progress` — per-category completion
-- `user_activity_logs` — audit trail
-- `feedback_questions`, `feedback_submissions`, `feedback_answers` — in-app feedback
-
-## RPC catalog
-
-See [API.md → RPCs](API.md#rpcs-postgres-functions).
-
-## Backups
-
-Hosted Supabase takes daily backups automatically. To export ad hoc:
+Hosted Supabase takes daily backups automatically. To export ad hoc via Supabase CLI:
 
 ```bash
 supabase db dump --file backup.sql             # schema + data
