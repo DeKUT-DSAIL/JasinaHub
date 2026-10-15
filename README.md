@@ -1,6 +1,6 @@
 # JasinaHub
 
-> A voice data collection platform designed for gathering and managing audio recordings in low-resource African languages at scale. Built with a focus on user experience, accessibility, and robust user and data management.
+> A speech and text data collection platform for low-resource African languages. Built with a focus on user experience, accessibility, and robust user and data management. The platform enables community-driven data collection by providing an accessible web interface where volunteers can record naturally elicited responses or read-speech responses to supplied prompts in their native languages. The transcription workflow allows for the transcription of validated recordings, producing paired audio–transcription datasets suitable for downstream machine learning tasks.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://react.dev/)
@@ -13,20 +13,6 @@
 
 ---
 
-## Objective
-
-JasinaHub aims to curate structured, high-quality voice datasets in low-resource African languages for developing Automatic Speech Recognition (ASR) systems. The platform enables community-driven data collection by providing an accessible web interface where volunteers can record spoken responses to health-related prompts in their native languages. Approved transcribers then convert these recordings into text, producing paired audio–transcription datasets suitable for training and evaluating ASR models.
-
-The key goals of the project are:
-
-1. **Scalable voice data collection** — Enable large numbers of volunteers to contribute voice recordings through a simple, mobile-friendly interface.
-2. **Community-driven transcription** — Allow approved transcribers to convert audio recordings into text, with quality controls and guidelines for handling dialectal variations and borrowed words.
-3. **Dataset curation** — Pair audio recordings with verified transcriptions to produce structured datasets ready for ASR model training.
-4. **Quality assurance** — Provide administrators with tools to review, accept, or reject recordings and transcriptions to maintain dataset quality.
-5. **Accessibility and inclusivity** — Deliver a mobile-first, offline-resilient experience so that users in areas with limited connectivity can still participate.
-
----
-
 ## How It Works
 
 The platform operates across three integrated user roles:
@@ -34,10 +20,10 @@ The platform operates across three integrated user roles:
 ```
   ┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
   │  1. Record             │      │  2. Transcribe         │      │  3. Curate & Export    │
-  │  (Volunteers)          │ ───► │  (Approved Speakers)   │ ───► │  (Administrators)      │
-  │  Answer health prompts │      │  Listen to audio and   │      │  Review quality,       │
-  │  in native dialects    │      │  provide verbatim text │      │  accept/reject records,│
-  │  via mobile or PWA.    │      │  with atomic locks.    │      │  and export ASR ZIPs.  │
+  │  (Volunteers)          │ ───► │  (Transcribers)        │ ───► │  (Administrators)      │
+  │  Answer prompts        │      │  Listen to audio and   │      │  Review quality,       │
+  │  in local languages    │      │  provide verbatim      │      │  accept/reject records,│
+  │  via mobile or PWA.    │      │  transcriptions.       │      │  and export ZIPs.      │
   └────────────────────────┘      └────────────────────────┘      └────────────────────────┘
 ```
 
