@@ -9,7 +9,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[**Live Demo**](https://www.jasinahub.vercel.app) • [**Quick Start**](#quick-start) • [**Deployment**](#deployment) • [**Database Setup**](#3-set-up-database-supabase-cloud--no-docker) • [**Architecture**](docs/ARCHITECTURE.md) • [**Documentation**](#documentation-index)
+[**Live Demo**](https://jasinahub.vercel.app) • [**Quick Start**](#quick-start) • [**Deployment**](#deployment) • [**Database Setup**](#3-set-up-database-supabase-cloud--no-docker) • [**Architecture**](docs/ARCHITECTURE.md) • [**Documentation**](#documentation-index)
 
 ---
 
