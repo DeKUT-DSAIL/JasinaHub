@@ -12,12 +12,20 @@ Get JasinaHub running locally in under 5 minutes without needing Docker.
 
 ---
 
-## 2. Clone and Install App Dependencies
+## 2. Fork and Clone Your Repository
+
+1. Fork [DeKUT-DSAIL/JasinaHub](https://github.com/DeKUT-DSAIL/JasinaHub) on GitHub.
+2. Clone your personal fork and install dependencies:
 
 ```bash
-git clone https://github.com/DeKUT-DSAIL/JasinaHub.git jasinahub
+git clone https://github.com/<your-username>/JasinaHub.git jasinahub
 cd jasinahub
 npm install
+```
+
+3. (Optional) Add upstream remote to track original updates:
+```bash
+git remote add upstream https://github.com/DeKUT-DSAIL/JasinaHub.git
 ```
 
 ---

@@ -1,0 +1,7 @@
+# Require core team review for all files
+*       @DeKUT-DSAIL/software_dev @call493
+
+# Critical security and database paths
+/supabase/migrations/   @DeKUT-DSAIL/software_dev
+/supabase/              @DeKUT-DSAIL/software_dev
+/.env.example           @DeKUT-DSAIL/software_dev

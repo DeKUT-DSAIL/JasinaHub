@@ -9,7 +9,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[**Live Demo**](https://www.jasinahub.vercel.app) • [**Quick Start**](#quick-start) • [**Database Setup**](#3-set-up-database-supabase-cloud--no-docker) • [**Architecture**](docs/ARCHITECTURE.md) • [**Documentation**](#documentation-index)
+[**Live Demo**](https://www.jasinahub.vercel.app) • [**Quick Start**](#quick-start) • [**Deployment**](#deployment) • [**Database Setup**](#3-set-up-database-supabase-cloud--no-docker) • [**Architecture**](docs/ARCHITECTURE.md) • [**Documentation**](#documentation-index)
 
 ---
 
@@ -85,13 +85,30 @@ node -v   # Expected: v18.0.0 or higher
 npm -v    # Expected: v9.0.0 or higher
 ```
 
-### 2. Clone & Install node modules
+### 2. Fork & Clone Your Repository
+
+To use, customize, or deploy JasinaHub, work from your own GitHub fork:
+
+1. Navigate to [github.com/DeKUT-DSAIL/JasinaHub](https://github.com/DeKUT-DSAIL/JasinaHub).
+2. Click the **Fork** button (top-right) to create an independent copy under your personal GitHub account or organization.
+3. Clone your forked repository to your local machine:
 
 ```bash
-git clone https://github.com/DeKUT-DSAIL/JasinaHub.git
+# Replace <your-username> with your GitHub username
+git clone https://github.com/<your-username>/JasinaHub.git
 cd JasinaHub
+
+# Install dependencies
 npm install
 ```
+
+4. (Recommended) Configure the original parent repository as an `upstream` remote so you can sync future updates:
+
+```bash
+git remote add upstream https://github.com/DeKUT-DSAIL/JasinaHub.git
+```
+
+All your local commits and pushes (`git push origin main`) will publish directly to your personal fork without affecting the parent repository.
 
 ### 3. Set Up Database (Supabase Cloud — No Docker)
 
@@ -155,6 +172,87 @@ ON CONFLICT (user_id, role) DO NOTHING;
 ### 7. Verify Installation
 
 In the app, navigate to **Admin Panel → Tests** tab and click **Run all tests**. All test suites (Smoke, Auth, RLS, Storage, and RPC) will run automated checks and display green checkmarks.
+
+---
+
+## Deployment
+
+Once your application is running locally and your Supabase project is configured, you can deploy JasinaHub to static hosting platforms such as Vercel or Netlify.
+
+### 1. Pre-Deployment Preparation
+
+- Ensure all local code changes are committed and pushed to your **forked** GitHub repository (`https://github.com/<your-username>/JasinaHub`).
+- Verify that your Supabase database has been initialized using [`supabase/setup_complete.sql`](supabase/setup_complete.sql).
+- Have your Supabase credentials ready (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`).
+
+### 2. Deploying to Vercel
+
+Vercel provides native support for Vite applications. Single-page application rewrites are pre-configured in `vercel.json` to prevent 404 errors on page reload.
+
+#### Using the Vercel Dashboard
+
+1. Sign in to [vercel.com](https://vercel.com) and click **Add New... > Project**.
+2. Select your **forked** `JasinaHub` GitHub repository (`<your-username>/JasinaHub`).
+3. Configure the build settings (Vite is automatically detected):
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. Expand the **Environment Variables** section and add the following keys:
+   - `VITE_SUPABASE_URL`: Your Supabase Project URL
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`: Your Supabase anon public API key
+   - `VITE_SUPABASE_PROJECT_ID`: Your Supabase project reference ID
+5. Click **Deploy**.
+
+Deploying from your fork ensures that Vercel automatically deploys updates whenever you push commits to your repository (`origin`), without affecting the parent repository.
+
+#### Using the Vercel CLI (Alternative)
+
+```bash
+npm install -g vercel
+vercel
+```
+
+Follow the interactive prompts and supply the environment variables in project settings.
+
+### 3. Deploying to Netlify
+
+Netlify single-page routing is pre-configured via `public/_redirects` to route all page requests to `/index.html`.
+
+#### Using the Netlify Dashboard
+
+1. Sign in to [netlify.com](https://netlify.com) and click **Add new site > Import an existing project**.
+2. Connect to your Git provider and select your **forked** `JasinaHub` repository.
+3. Configure the build and deploy settings:
+   - **Base directory:** Leave blank
+   - **Build command:** `npm run build`
+   - **Publish directory:** `dist`
+4. Under **Environment variables**, click **Add a variable** and define:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SUPABASE_PROJECT_ID`
+5. Click **Deploy JasinaHub**.
+
+Any subsequent commits pushed to your fork's production branch will trigger automated Netlify deployments.
+
+#### Using the Netlify CLI (Alternative)
+
+```bash
+npm install -g netlify-cli
+netlify init
+netlify deploy --prod
+```
+
+### 4. Supabase Auth Redirect Configuration
+
+After your site is deployed, configure Supabase to handle authentication redirects for your production domain:
+
+1. Open your [Supabase Dashboard](https://supabase.com/dashboard) and select your project.
+2. Navigate to **Authentication > URL Configuration**.
+3. Set the **Site URL** to your production domain (e.g., `https://your-app.vercel.app` or `https://your-app.netlify.app`).
+4. Under **Redirect URLs**, add wildcard patterns for your domain:
+   - `https://your-app.vercel.app/**`
+   - `https://your-app.netlify.app/**`
+5. Click **Save**.
 
 ---
 
