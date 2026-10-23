@@ -928,4 +928,22 @@ ON CONFLICT DO NOTHING;
 --     CROSS JOIN public.categories c
 --     WHERE p.verified = true
 --     ON CONFLICT (user_id, category_id) DO UPDATE SET status = 'approved', reviewed_at = now();
+--
+-- STEP 4 — Configure Password Reset & Auth Redirect URLs:
+--   To allow users to reset their passwords smoothly in your specific Supabase project:
+--   1. In your Supabase Dashboard, go to:
+--      Authentication → URL Configuration
+--   2. Set "Site URL" to your application's domain:
+--      - Local Development:  http://localhost:8080
+--      - Production:         https://your-domain.com
+--   3. Add your callback paths to "Redirect URLs":
+--      - http://localhost:8080/update-password
+--      - http://localhost:5173/update-password
+--      - https://your-domain.com/update-password
+--      - (Optional wildcards for preview deploys: https://*.vercel.app/update-password)
+--   4. Check the Email Template in:
+--      Authentication → Email Templates → Reset Password
+--      Ensure the link uses the Confirmation URL:
+--      <a href="{{ .ConfirmationURL }}">Reset Password</a>
+--      (Supabase generates a secure recovery token and routes users directly to /update-password).
 -- ==============================================================================

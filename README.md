@@ -116,6 +116,7 @@ All your local commits and pushes (`git push origin main`) will publish directly
 2. Open the **SQL Editor** (`>_`) in your Supabase dashboard and click **New query**.
 3. Open [`supabase/setup_complete.sql`](supabase/setup_complete.sql) from this repository, copy its contents, paste into the SQL Editor, and click **Run**.
 4. In **Authentication → Providers → Email**, toggle OFF **Confirm email** so users can sign up and immediately log in without requiring an email confirmation link.
+5. In **Authentication → URL Configuration**, set **Site URL** (e.g. `http://localhost:8080` or your production domain `https://your-domain.com`) and add your callback URLs under **Redirect URLs** (e.g. `http://localhost:8080/update-password`, `https://your-domain.com/update-password`) to enable password resets.
 
 <details>
 <summary><b>View Database Components Initialized by the Script</b></summary>
@@ -145,6 +146,11 @@ Retrieve your **Project URL** and **anon/public key** from your Supabase Dashboa
 VITE_SUPABASE_URL="https://your-project-id.supabase.co"
 VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-public-key"
 VITE_SUPABASE_PROJECT_ID="your-project-id"
+
+# Base application URL (used for password reset redirects)
+VITE_SITE_URL="http://localhost:8080"
+# (Optional) Explicit redirect override:
+# VITE_RESET_PASSWORD_REDIRECT_URL="http://localhost:8080/update-password"
 ```
 
 ### 5. Run the Dev Server

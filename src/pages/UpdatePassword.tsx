@@ -29,6 +29,16 @@ export default function UpdatePassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if error parameters are present in URL query or hash (e.g., expired or invalid token)
+    const searchParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.startsWith("#") ? window.location.hash.substring(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    const urlError = searchParams.get("error_description") || hashParams.get("error_description") || searchParams.get("error") || hashParams.get("error");
+    if (urlError) {
+      setLinkInvalid(true);
+      return;
+    }
+
     // Check if recovery session or auth session is already established
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {

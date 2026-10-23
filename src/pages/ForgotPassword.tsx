@@ -19,16 +19,47 @@ export default function ForgotPassword() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Helper to determine redirect URL: always target jasinahub.vercel.app in production
+  // Helper to determine redirect URL:
+  // 1. Explicit override VITE_RESET_PASSWORD_REDIRECT_URL if set in .env
+  // 2. Base site URL VITE_SITE_URL if set in .env
+  // 3. Automatically detect current browser origin (localhost, custom domain, Vercel/Netlify deploy, etc.)
   const getRedirectUrl = () => {
-    if (typeof window !== "undefined") {
-      const origin = window.location.origin;
-      // If developing locally, redirect to localhost
-      if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-        return `${origin}/update-password`;
+    const explicitRedirect = import.meta.env.VITE_RESET_PASSWORD_REDIRECT_URL;
+    if (explicitRedirect) return explicitRedirect;
+
+    const siteUrl = import.meta.env.VITE_SITE_URL;
+    if (siteUrl) {
+      return `${siteUrl.replace(/\/$/, "")}/update-password`;
+    }
+
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return `${window.location.origin}/update-password`;
+    }
+
+    return "http://localhost:8080/update-password";
+  };
+
+  const getDisplayDomain = () => {
+    const explicitRedirect = import.meta.env.VITE_RESET_PASSWORD_REDIRECT_URL;
+    if (explicitRedirect) {
+      try {
+        return new URL(explicitRedirect).host;
+      } catch {
+        // ignore
       }
     }
-    return "https://jasinahub.vercel.app/update-password";
+    const siteUrl = import.meta.env.VITE_SITE_URL;
+    if (siteUrl) {
+      try {
+        return new URL(siteUrl).host;
+      } catch {
+        // ignore
+      }
+    }
+    if (typeof window !== "undefined" && window.location?.host) {
+      return window.location.host;
+    }
+    return "your application";
   };
 
   // Cooldown timer for resend
@@ -100,7 +131,7 @@ export default function ForgotPassword() {
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
               Click the link in the email to reset your password on{" "}
-              <strong className="text-gray-900">jasinahub.vercel.app</strong>.
+              <strong className="text-gray-900">{getDisplayDomain()}</strong>.
             </p>
             <p className="text-xs text-muted-foreground">
               If you don't see it within a minute, please check your spam or junk folder.
