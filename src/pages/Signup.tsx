@@ -159,7 +159,6 @@ export default function Signup() {
         email: formData.email.trim(),
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             first_name: formData.firstName.trim(),
             last_name: formData.lastName.trim(),
@@ -176,11 +175,19 @@ export default function Signup() {
         toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
         return;
       }
-      if (data.user && !data.session) {
-        toast({ title: "Check Your Email", description: "We've sent you a confirmation link." });
-      } else {
-        toast({ title: "Account Created!", description: "Your account has been created successfully." });
+
+      if (data?.session) {
+        toast({
+          title: "Account Created!",
+          description: "Welcome to JasinaHub! You are now logged in.",
+        });
         navigate("/dashboard");
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "You can now log in with your credentials.",
+        });
+        navigate("/login");
       }
     } catch {
       toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });

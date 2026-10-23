@@ -115,13 +115,14 @@ All your local commits and pushes (`git push origin main`) will publish directly
 1. Create a free project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. Open the **SQL Editor** (`>_`) in your Supabase dashboard and click **New query**.
 3. Open [`supabase/setup_complete.sql`](supabase/setup_complete.sql) from this repository, copy its contents, paste into the SQL Editor, and click **Run**.
+4. In **Authentication → Providers → Email**, toggle OFF **Confirm email** so users can sign up and immediately log in without requiring an email confirmation link.
 
 <details>
 <summary><b>View Database Components Initialized by the Script</b></summary>
 
 The one-click setup script is fully idempotent and provisions the complete backend:
 - **Custom Enums:** `app_role` (`admin`, `user`) and `response_status` (`pending`, `accepted`, `rejected`).
-- **Core Relational Tables:** `profiles`, `user_roles`, `categories`, `questions`, `voice_responses`, `transcriptions`, `transcription_locks`, `user_progress`, `user_activity_logs`, `feedback_questions`, `feedback_submissions`, `feedback_answers`, `password_reset_codes`.
+- **Core Relational Tables:** `profiles`, `user_roles`, `categories`, `category_access_requests`, `questions`, `voice_responses`, `transcriptions`, `transcription_locks`, `user_progress`, `user_activity_logs`, `feedback_questions`, `feedback_submissions`, `feedback_answers`, `password_reset_codes`.
 - **Database Triggers:** Automated profile provisioning hook on `auth.users` (`handle_new_user`) and anonymous pseudonym generator (`set_profile_pseudonym`).
 - **Stored Procedures (RPCs):** `has_role`, atomic locking procedure `claim_random_transcription`, `release_transcription_lock`, `get_question_counts`, `get_admin_chart_data`, and `get_transcription_stats`.
 - **Row-Level Security (RLS) & Grants:** Enforced access boundaries with grants to `authenticated`, `anon`, and `service_role`.

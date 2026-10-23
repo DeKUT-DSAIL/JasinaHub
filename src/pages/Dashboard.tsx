@@ -9,6 +9,7 @@ import { ProfileDialog } from "@/components/Dashboard/ProfileDialog";
 import { QuestionsPreviewCard } from "@/components/Dashboard/QuestionsPreviewCard";
 import { TranscribePreviewCard } from "@/components/Dashboard/TranscribePreviewCard";
 import { MobileProgressSnippet } from "@/components/Dashboard/MobileProgressSnippet";
+import { CategoryBrowser } from "@/components/Dashboard/CategoryBrowser";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ const DashboardSkeleton = () => (
 
 export default function Dashboard() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [completedQuestions, setCompletedQuestions] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -87,6 +89,8 @@ export default function Dashboard() {
         navigate('/login');
         return;
       }
+
+      setUserId(authUser.id);
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -214,8 +218,9 @@ export default function Dashboard() {
     loadDashboardData();
   }, [navigate]);
 
-  const handleStartCategory = () => {
-    navigate(`/questions?category=00000000-0000-0000-0000-000000000001`);
+  const handleStartCategory = (categoryId?: string) => {
+    const id = categoryId || '00000000-0000-0000-0000-000000000001';
+    navigate(`/questions?category=${id}`);
   };
 
   const handleStartTranscribing = () => {
@@ -452,6 +457,15 @@ export default function Dashboard() {
               </div>
 
               {/* Stats Strip Removed by user request */}
+
+              {/* Category Browser */}
+              {userId && (
+                <CategoryBrowser
+                  userId={userId}
+                  isVerified={isVerified || isAdmin}
+                  onStartCategory={handleStartCategory}
+                />
+              )}
 
               {/* Action Grid & Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

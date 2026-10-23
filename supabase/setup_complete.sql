@@ -182,6 +182,22 @@ CREATE TABLE IF NOT EXISTS public.password_reset_codes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Category Access Requests: Users request recording/transcription access per category
+-- Admins review and approve/reject each request.
+CREATE TABLE IF NOT EXISTS public.category_access_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  category_id UUID NOT NULL REFERENCES public.categories(id) ON DELETE CASCADE,
+  -- 'pending' | 'approved' | 'rejected'
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'rejected')),
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by UUID REFERENCES auth.users(id),
+  admin_note TEXT,
+  UNIQUE (user_id, category_id)
+);
+
 -- ------------------------------------------------------------------------------
 -- 3. INDEXES
 -- ------------------------------------------------------------------------------
@@ -194,6 +210,9 @@ CREATE INDEX IF NOT EXISTS idx_transcription_locks_user_id ON public.transcripti
 CREATE INDEX IF NOT EXISTS idx_transcription_locks_expires_at ON public.transcription_locks(expires_at);
 CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user_id ON public.user_activity_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_password_reset_codes_lookup ON public.password_reset_codes(email, code, used);
+CREATE INDEX IF NOT EXISTS idx_cat_access_requests_status    ON public.category_access_requests(status);
+CREATE INDEX IF NOT EXISTS idx_cat_access_requests_user_id   ON public.category_access_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_cat_access_requests_category  ON public.category_access_requests(category_id);
 
 -- Partial unique index for transcriptions
 CREATE UNIQUE INDEX IF NOT EXISTS transcriptions_voice_response_id_unique
@@ -619,6 +638,7 @@ ALTER TABLE public.feedback_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback_answers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.password_reset_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.category_access_requests ENABLE ROW LEVEL SECURITY;
 
 -- 6.1 profiles
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
@@ -746,6 +766,31 @@ CREATE POLICY "Service role full access to password_reset_codes"
   ON public.password_reset_codes
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+-- 6.12 category_access_requests
+DROP POLICY IF EXISTS "Users can view own category access requests" ON public.category_access_requests;
+CREATE POLICY "Users can view own category access requests"
+  ON public.category_access_requests
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id OR has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "Users can create own category access requests" ON public.category_access_requests;
+CREATE POLICY "Users can create own category access requests"
+  ON public.category_access_requests
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can update category access requests" ON public.category_access_requests;
+CREATE POLICY "Admins can update category access requests"
+  ON public.category_access_requests
+  FOR UPDATE TO authenticated
+  USING (has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "Admins can delete category access requests" ON public.category_access_requests;
+CREATE POLICY "Admins can delete category access requests"
+  ON public.category_access_requests
+  FOR DELETE TO authenticated
+  USING (has_role(auth.uid(), 'admin'));
+
 -- ------------------------------------------------------------------------------
 -- 7. GRANTS TO ROLES
 -- ------------------------------------------------------------------------------
@@ -843,11 +888,44 @@ ON CONFLICT DO NOTHING;
 -- ==============================================================================
 -- SETUP COMPLETE!
 -- ==============================================================================
--- After you register your first user account through http://localhost:8080/signup,
--- run the following query in this SQL Editor to grant yourself admin access:
+--
+-- STEP 1 — Disable Email Confirmation (immediate login without confirmation links):
+--   In your Supabase Dashboard:
+--   1. Go to: Authentication → Providers → Email
+--   2. Toggle OFF "Confirm email"
+--   3. Click "Save"
+--   Now users can sign up and immediately log in or access the platform without
+--   having to click a confirmation link in their inbox.
+--
+-- STEP 2 — Grant Yourself Admin Access:
+--   After registering your first account on the platform, run this in the SQL Editor:
 --
 --   UPDATE public.profiles SET verified = true WHERE email = 'your-email@example.com';
 --   INSERT INTO public.user_roles (user_id, role)
 --   SELECT id, 'admin' FROM auth.users WHERE email = 'your-email@example.com'
 --   ON CONFLICT (user_id, role) DO NOTHING;
+--
+-- STEP 3 — Category Access Requests Setup & Management:
+--   The table `public.category_access_requests` is already created and secured above.
+--   Workflow:
+--     1. Users log into the Dashboard and see available categories in the Category Browser.
+--     2. They click "Request Access" for any category they wish to record or transcribe for.
+--     3. Admins visit the Admin Panel → "Category Access" tab:
+--        - View all pending, approved, and rejected access requests.
+--        - Click "Approve" to grant recording/transcription access.
+--        - Click "Reject" or "Revoke" with optional administrative feedback notes.
+--
+--   Optional SQL Shortcuts for Admins:
+--     -- Grant access to a specific user for a specific category:
+--     INSERT INTO public.category_access_requests (user_id, category_id, status, reviewed_at)
+--     VALUES ('<USER_UUID>', '<CATEGORY_UUID>', 'approved', now())
+--     ON CONFLICT (user_id, category_id) DO UPDATE SET status = 'approved', reviewed_at = now();
+--
+--     -- Grant access to all categories for all verified users (bulk grant):
+--     INSERT INTO public.category_access_requests (user_id, category_id, status, reviewed_at)
+--     SELECT p.id, c.id, 'approved', now()
+--     FROM public.profiles p
+--     CROSS JOIN public.categories c
+--     WHERE p.verified = true
+--     ON CONFLICT (user_id, category_id) DO UPDATE SET status = 'approved', reviewed_at = now();
 -- ==============================================================================

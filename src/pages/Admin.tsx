@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronRight, ChevronLeft, LogOut, ArrowLeft, Users, FileText, BarChart3, BookOpen, TableIcon, HardDriveDownload, Loader2, CheckCircle2, XCircle, Download, Upload, MoreHorizontal, PieChart, Headphones, Mic, Database, FlaskConical, MessageSquare } from "lucide-react";
+import { ChevronRight, ChevronLeft, LogOut, ArrowLeft, Users, FileText, BarChart3, BookOpen, TableIcon, HardDriveDownload, Loader2, CheckCircle2, XCircle, Download, Upload, MoreHorizontal, PieChart, Headphones, Mic, Database, FlaskConical, MessageSquare, FolderKey } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import { AdminDatasetTab } from "@/components/Admin/AdminDatasetTab";
 import { AdminDocumentationTab } from "@/components/Admin/AdminDocumentationTab";
 import { AdminTestsTab } from "@/components/Admin/AdminTestsTab";
 import { AdminFeedbackTab } from "@/components/Admin/AdminFeedbackTab";
+import { AdminCategoryAccessTab } from "@/components/Admin/AdminCategoryAccessTab";
 
 interface Question {
   id: string;
@@ -98,6 +99,7 @@ export default function Admin() {
   const [pageSize] = useState(100);
   const [totalResponsesForPagination, setTotalResponsesForPagination] = useState(0);
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const [pendingCategoryRequests, setPendingCategoryRequests] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
     // Auto-collapse on smaller laptop screens to give content more room
@@ -112,6 +114,7 @@ export default function Admin() {
     transcriptions: { title: 'Transcriptions', subtitle: 'Verify transcribed audio for dataset readiness.' },
     dataset: { title: 'Dataset', subtitle: 'Inspect and export the curated ASR dataset.' },
     feedback: { title: 'Feedback', subtitle: 'Read what users are telling you about JasinaHub.' },
+    category_access: { title: 'Category Access', subtitle: 'Review and action user requests to record in specific categories.' },
     documentation: { title: 'Documentation', subtitle: 'Project documentation and resources.' },
     tests: { title: 'Tests', subtitle: 'Run platform health and integration tests.' },
   };
@@ -336,6 +339,17 @@ export default function Admin() {
       if (questionsRes.data) setQuestions(questionsRes.data);
       if (usersRes.data) setAllUsers(usersRes.data as any);
       setUserResponses(enrichedResponses);
+
+      // Fetch pending category access request count
+      try {
+        const { count } = await supabase
+          .from('category_access_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        setPendingCategoryRequests(count || 0);
+      } catch {
+        // Non-fatal – table may not exist yet in older environments
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -575,6 +589,7 @@ export default function Admin() {
           <SidebarItem icon={Headphones} label="Transcriptions" value="transcriptions" badgeCount={totalTranscribed} />
           <SidebarItem icon={Database} label="Dataset" value="dataset" />
           <SidebarItem icon={MessageSquare} label="Feedback" value="feedback" />
+          <SidebarItem icon={FolderKey} label="Category Access" value="category_access" badgeCount={pendingCategoryRequests} />
 
           <div className="pt-4 mt-4 border-t border-border/50">
             <SidebarItem icon={BookOpen} label="Documentation" value="documentation" />
@@ -793,6 +808,10 @@ export default function Admin() {
 
             <TabsContent value="feedback">
               <AdminFeedbackTab />
+            </TabsContent>
+
+            <TabsContent value="category_access">
+              <AdminCategoryAccessTab />
             </TabsContent>
 
             <TabsContent value="documentation">
