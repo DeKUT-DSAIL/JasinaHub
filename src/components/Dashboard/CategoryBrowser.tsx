@@ -31,6 +31,7 @@ interface AccessRequest {
 interface CategoryBrowserProps {
   userId: string;
   isVerified: boolean;
+  isAdmin?: boolean;
   onStartCategory: (categoryId: string) => void;
 }
 
@@ -68,6 +69,7 @@ const cardAccents = [
 export function CategoryBrowser({
   userId,
   isVerified,
+  isAdmin,
   onStartCategory,
 }: CategoryBrowserProps) {
   const { toast } = useToast();
@@ -185,7 +187,6 @@ export function CategoryBrowser({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
           Available Categories
         </h2>
         <span className="text-xs text-muted-foreground font-medium">
@@ -197,7 +198,7 @@ export function CategoryBrowser({
         {categories.map((category, idx) => {
           const request = getRequestForCategory(category.id);
           const accentClass = cardAccents[idx % cardAccents.length];
-          const isApproved = request?.status === "approved";
+          const isApproved = isAdmin || request?.status === "approved";
           const isPending = request?.status === "pending";
           const isRejected = request?.status === "rejected";
           const isLoadingThis = requesting === category.id;

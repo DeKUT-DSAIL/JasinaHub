@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Play, Pause, RotateCcw, Send, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ export const MinimalRecorder = ({ onRecordingComplete, disabled }: MinimalRecord
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -28,11 +29,39 @@ export const MinimalRecorder = ({ onRecordingComplete, disabled }: MinimalRecord
   const MAX_DURATION = 30;
 
   const startRecording = async () => {
+    setPermissionError(null);
+
+    // 1. Verify Browser Support & Secure Context
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const isSecure = window.isSecureContext;
+      const msg = !isSecure
+        ? "Microphone access requires a Secure Context (HTTPS or localhost). If you are accessing via an IP address, please switch to http://localhost:8080 or setup HTTPS."
+        : "Your browser does not support audio recording. Please use modern Chrome, Edge, or Safari.";
+      
+      setPermissionError(msg);
+      toast({
+        title: "Microphone Not Supported",
+        description: msg,
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       haptic.mediumTap();
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { echoCancellation: true, noiseSuppression: true } 
-      });
+
+      let stream: MediaStream;
+      try {
+        // Attempt with noise suppression & echo cancellation
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { echoCancellation: true, noiseSuppression: true } 
+        });
+      } catch (constraintErr) {
+        // Fallback to basic audio constraint if device rejects specific parameters
+        console.warn("Attempting basic audio constraint fallback:", constraintErr);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+
       streamRef.current = stream;
 
       const mediaRecorder = new MediaRecorder(stream);
@@ -61,9 +90,29 @@ export const MinimalRecorder = ({ onRecordingComplete, disabled }: MinimalRecord
         if (elapsed >= MAX_DURATION) stopRecording();
       }, 100);
 
-    } catch (err) {
-      console.error(err);
-      toast({ title: "Microphone Access Denied", variant: "destructive" });
+    } catch (err: any) {
+      console.error("Microphone capture error:", err);
+
+      let title = "Microphone Access Denied";
+      let description = "Please allow microphone access in your browser settings.";
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        title = "Permission Blocked";
+        description = "Your browser or Windows has blocked microphone access for this site. Click the lock/tune icon on the left of the address bar to Allow Microphone, or check Windows Privacy Settings.";
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        title = "No Microphone Found";
+        description = "No audio input hardware was detected on your computer. Please connect a microphone or headset.";
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        title = "Microphone Busy";
+        description = "Your microphone is being used by another application (e.g. Zoom, Teams, Discord). Please close it and try again.";
+      }
+
+      setPermissionError(description);
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
     }
   };
 
@@ -89,170 +138,114 @@ export const MinimalRecorder = ({ onRecordingComplete, disabled }: MinimalRecord
 
   const togglePlayback = () => {
     if (!recordedBlob) return;
-    haptic.lightTap();
 
-    if (isPlaying && audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
+    if (isPlaying) {
+      haptic.lightTap();
+      audioPlayerRef.current?.pause();
       setIsPlaying(false);
     } else {
-      const audio = new Audio(URL.createObjectURL(recordedBlob));
-      audioPlayerRef.current = audio;
-      audio.onended = () => setIsPlaying(false);
-      audio.play();
+      haptic.lightTap();
+      if (!audioPlayerRef.current) {
+        const audioUrl = URL.createObjectURL(recordedBlob);
+        const audio = new Audio(audioUrl);
+        audio.onended = () => setIsPlaying(false);
+        audioPlayerRef.current = audio;
+      }
+      audioPlayerRef.current.play();
       setIsPlaying(true);
     }
   };
 
-  const handleSubmit = () => {
-    if (recordedBlob) {
-      haptic.success();
-      onRecordingComplete(recordedBlob, recordingTime);
-    }
+  const handleSend = () => {
+    if (!recordedBlob) return;
+    haptic.success();
+    onRecordingComplete(recordedBlob, recordingTime);
+    handleReset();
   };
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    };
-  }, []);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const isNearLimit = recordingTime >= 25;
-  const isApproachingLimit = recordingTime >= 20;
-  const progressPercent = (recordingTime / MAX_DURATION) * 100;
 
   return (
-    <div 
-      className="w-full"
-      role="region"
-      aria-label="Voice recorder"
-    >
-      {/* IDLE STATE */}
-      {recorderState === 'idle' && (
-        <div className="flex flex-col items-center gap-3">
-          <Button
-            onClick={startRecording}
-            disabled={disabled}
-            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-105 motion-safe:transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label="Start recording"
-          >
-            <Mic className="w-6 h-6 sm:w-7 sm:h-7" aria-hidden="true" />
-          </Button>
-          <span className="text-xs text-muted-foreground font-medium">Tap to record (max 30s)</span>
+    <div className="flex flex-col items-center justify-center gap-3 w-full">
+      {/* Permission helper banner if blocked */}
+      {permissionError && recorderState === 'idle' && (
+        <div className="w-full p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-left flex items-start gap-2.5 animate-in fade-in">
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+            <span className="font-semibold block mb-0.5">Microphone permission note:</span>
+            {permissionError}
+          </div>
         </div>
       )}
 
-      {/* RECORDING STATE */}
+      {/* Main Recording Interface */}
+      {recorderState === 'idle' && (
+        <Button
+          onClick={startRecording}
+          disabled={disabled}
+          className={cn(
+            "h-14 sm:h-16 px-6 sm:px-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all duration-300 flex items-center gap-3",
+            disabled && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <Mic className="w-4 h-4" />
+          </div>
+          <span className="text-sm sm:text-base">Start Recording</span>
+        </Button>
+      )}
+
       {recorderState === 'recording' && (
-        <div className="flex flex-col items-center gap-3">
-          {/* Timer with progress ring */}
-          <div className="relative">
-            <svg className="w-20 h-20 sm:w-24 sm:h-24 -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                stroke="hsl(var(--muted))"
-                strokeWidth="6"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                stroke={isNearLimit ? "hsl(var(--destructive))" : isApproachingLimit ? "hsl(38, 92%, 50%)" : "hsl(var(--primary))"}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${progressPercent * 2.83} 283`}
-                className="transition-all duration-200"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={cn(
-                "text-lg sm:text-xl font-bold font-mono tabular-nums",
-                isNearLimit ? "text-destructive" : "text-foreground"
-              )}>
-                {formatTime(recordingTime)}
-              </span>
-              {isNearLimit && (
-                <AlertCircle className="w-3 h-3 text-destructive animate-pulse" aria-hidden="true" />
-              )}
-            </div>
+        <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+            <span className="font-mono text-base font-bold text-red-600">
+              {recordingTime}s / {MAX_DURATION}s
+            </span>
           </div>
 
-          {/* Recording indicator */}
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-            <span className="text-xs font-medium text-muted-foreground">Recording...</span>
-          </div>
-
-          {/* Stop button */}
           <Button
             onClick={stopRecording}
-            className="h-12 px-6 rounded-full bg-destructive hover:bg-destructive/90 text-white shadow-md hover:scale-105 motion-safe:transition-all"
-            aria-label="Stop recording"
+            variant="destructive"
+            className="h-14 sm:h-16 px-8 rounded-full font-semibold shadow-lg shadow-red-500/20 flex items-center gap-3 animate-pulse"
           >
-            <Square className="w-4 h-4 mr-2 fill-current" aria-hidden="true" />
-            Stop
+            <Square className="w-4 h-4 fill-current" />
+            <span>Stop Recording</span>
           </Button>
         </div>
       )}
 
-      {/* REVIEW STATE */}
       {recorderState === 'review' && (
-        <div className="flex flex-col items-center gap-3">
-          {/* Duration display */}
-          <div className="text-center">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-foreground">
-              {formatTime(recordingTime)}
-            </span>
-            <p className="text-xs text-muted-foreground mt-0.5">recorded</p>
+        <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 font-medium">Recorded: {recordingTime}s</span>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 w-full max-w-xs">
+          <div className="flex items-center gap-3">
             <Button
-              variant="outline"
-              size="icon"
               onClick={handleReset}
-              className="h-10 w-10 rounded-full border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-              aria-label="Redo recording"
-            >
-              <RotateCcw className="w-4 h-4" aria-hidden="true" />
-            </Button>
-
-            <Button
               variant="outline"
               size="icon"
-              onClick={togglePlayback}
-              className={cn(
-                "h-10 w-10 rounded-full border-border",
-                isPlaying && "bg-primary/10 border-primary/30 text-primary"
-              )}
-              aria-label={isPlaying ? "Pause playback" : "Play recording"}
-              aria-pressed={isPlaying}
+              className="h-12 w-12 rounded-full border-slate-200 hover:bg-slate-100"
+              title="Record again"
             >
-              {isPlaying ? (
-                <Pause className="w-4 h-4" aria-hidden="true" />
-              ) : (
-                <Play className="w-4 h-4" aria-hidden="true" />
-              )}
+              <RotateCcw className="w-4 h-4 text-slate-600" />
             </Button>
 
             <Button
-              onClick={handleSubmit}
-              disabled={disabled}
-              className="flex-1 h-10 rounded-full bg-foreground hover:bg-foreground/90 text-background shadow-md"
-              aria-label="Submit recording"
+              onClick={togglePlayback}
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full border-slate-200 hover:bg-slate-100"
+              title={isPlaying ? "Pause" : "Play recording"}
             >
-              Submit <Send className="w-4 h-4 ml-2" aria-hidden="true" />
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+            </Button>
+
+            <Button
+              onClick={handleSend}
+              className="h-12 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" />
+              <span>Submit Response</span>
             </Button>
           </div>
         </div>

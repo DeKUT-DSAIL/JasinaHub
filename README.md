@@ -123,12 +123,14 @@ All your local commits and pushes (`git push origin main`) will publish directly
 
 The one-click setup script is fully idempotent and provisions the complete backend:
 - **Custom Enums:** `app_role` (`admin`, `user`) and `response_status` (`pending`, `accepted`, `rejected`).
-- **Core Relational Tables:** `profiles`, `user_roles`, `categories`, `category_access_requests`, `questions`, `voice_responses`, `transcriptions`, `transcription_locks`, `user_progress`, `user_activity_logs`, `feedback_questions`, `feedback_submissions`, `feedback_answers`, `password_reset_codes`.
+- **Core Relational Tables:** `profiles`, `user_roles`, `categories`, `category_access_requests`, `questions`, `voice_responses`, `transcriptions`, `transcription_locks`, `user_progress`, `user_activity_logs`, `site_content`, `feedback_questions`, `feedback_submissions`, `feedback_answers`, `password_reset_codes`.
 - **Database Triggers:** Automated profile provisioning hook on `auth.users` (`handle_new_user`) and anonymous pseudonym generator (`set_profile_pseudonym`).
 - **Stored Procedures (RPCs):** `has_role`, atomic locking procedure `claim_random_transcription`, `release_transcription_lock`, `get_question_counts`, `get_admin_chart_data`, and `get_transcription_stats`.
 - **Row-Level Security (RLS) & Grants:** Enforced access boundaries with grants to `authenticated`, `anon`, and `service_role`.
 - **Storage Buckets:** `voice-recordings` (public audio streaming) and `images` (question illustrations).
-- **Starter Seed Data:** Default categories (*General Health*, *Nutrition*, *Maternal Health*), sample health prompts, and rating questions.
+- **Starter Seed Data:** Default categories (*General Health*, *Nutrition*, *Maternal Health*), sample health prompts, rating questions, and default site content keys (`consent_form`, `privacy_policy`).
+
+> **Upgrading an existing database?** If you have an existing database instance from a previous version, run [`supabase/migrations/add_site_content.sql`](supabase/migrations/add_site_content.sql) in your Supabase SQL Editor to add the `site_content` table, RLS policies, and seed rows without recreating your database.
 
 </details>
 
@@ -179,6 +181,36 @@ ON CONFLICT (user_id, role) DO NOTHING;
 ### 7. Verify Installation
 
 In the app, navigate to **Admin Panel → Tests** tab and click **Run all tests**. All test suites (Smoke, Auth, RLS, Storage, and RPC) will run automated checks and display green checkmarks.
+
+### 8. Customizing Platform Content (Consent Form & Privacy Policy)
+
+JasinaHub allows administrators to customize both the **Data Collection Consent Form** and the **Privacy Policy** directly from the UI without modifying code or redeploying:
+
+1. Log in with an administrator account and navigate to **Admin Panel (`/admin`) → Content** tab (`FileEdit` icon in the sidebar).
+2. Choose the sub-tab for the document you want to edit:
+   - **Consent Form:** Displayed to volunteers before they begin recording responses. Explain your specific project, data handling, and participant rights.
+   - **Privacy Policy:** Rendered at `/privacy-policy`. Detail your institution's data collection, storage retention, and participant rights.
+3. Edit the **Document Title** and write the body text using **Markdown** formatting (headings `#`, lists `-`, bold `**`, links `[text](url)`, etc.). Use the **Preview** tab to check formatting in real-time.
+4. Click **Save Changes**. The updated copy is saved to the `public.site_content` table in Supabase and takes effect immediately across the app.
+5. If the database entries are empty or not yet configured, the platform automatically falls back to sensible built-in defaults (DSAIL Kikuyu Speech study template and standard retention policy).
+
+### 9. Audio Recording & Microphone Setup Considerations
+
+When testing or deploying JasinaHub for speech data collection:
+
+- **Native Supabase Storage:**
+  - All voice submissions are uploaded directly to the Supabase Storage bucket `voice-recordings` at `{user_id}/{question_id}_{timestamp}.webm`.
+  - The bucket is automatically provisioned and configured with public streaming access by `setup_complete.sql`.
+  - No Google Cloud Console, Google Identity Services (GIS), or Google Drive API credentials are required.
+
+- **Microphone Permissions & Secure Context:**
+  - Modern web browsers enforce strict security for audio recording (`navigator.mediaDevices.getUserMedia`). Audio capture is **only permitted in a Secure Context** (`https://` or `http://localhost`).
+  - **Local Mobile Testing:** When testing on physical mobile phones over a local Wi-Fi network (e.g. `http://192.168.1.X:8080`), mobile browsers flag the plain IP address as an insecure context and block microphone access without showing a permission prompt.
+    - *Recommended solutions for local mobile testing:*
+      - **Android USB Debugging:** Connect via USB and run `adb reverse tcp:8080 tcp:8080`, then open `http://localhost:8080` in Chrome on Android.
+      - **HTTPS Tunnel:** Use Cloudflare Tunnels (`cloudflared tunnel --url http://localhost:8080`) or ngrok to access via a secure `https://` URL.
+      - **Production Deploy:** Deploy to Vercel or Netlify, where HTTPS is automatic.
+  - The recording component includes intelligent constraint fallbacks (falls back from advanced noise suppression/echo cancellation to basic audio if unsupported by the hardware) and actionable on-screen guidance if permissions are denied.
 
 ---
 
@@ -351,6 +383,17 @@ erDiagram
   profiles ||--o{ transcriptions : "transcribes"
   profiles ||--o{ user_roles : "has"
   profiles ||--o{ user_progress : "tracks"
+
+  site_content {
+    uuid id PK
+    text key UK
+    text title
+    text content_md
+    timestamptz updated_at
+    uuid updated_by FK
+  }
+
+  profiles ||--o{ site_content : "authors"
   categories ||--o{ questions : "contains"
   questions ||--o{ voice_responses : "answered_by"
   voice_responses ||--o{ transcriptions : "transcribed_in"
@@ -460,6 +503,7 @@ journey
 - `voice_responses` — Submitted audio files with 3-state moderation (`pending`, `accepted`, `rejected`).
 - `transcriptions` & `transcription_locks` — Verbatim text entries and 15-minute concurrency claim locks.
 - `user_progress` & `user_activity_logs` — Category completion counters and user audit trails.
+- `site_content` — Configurable markdown content for informed consent forms and privacy policies.
 - `feedback_*` — Dynamic user experience survey questions, submissions, and answers.
 
 #### Core RPC Stored Procedures

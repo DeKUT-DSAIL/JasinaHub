@@ -11,6 +11,7 @@ import { SkipToContent } from "@/components/ui/SkipToContent";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { PresenceTracker } from "@/components/PresenceTracker";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import UpdatePassword from "./pages/UpdatePassword";
 
 // Helper to retry dynamic imports on chunk load failures
@@ -68,28 +69,30 @@ const App = () => (
           <AuthProvider>
             <ScrollToTop />
             <PresenceTracker>
-            <Suspense fallback={<PageLoader />}>
-              <main id="main-content" tabIndex={-1} className="outline-none">
-                <Routes>
-                  <Route path="/" element={<Login />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/questions" element={<ProtectedRoute><Questions /></ProtectedRoute>} />
-                  <Route path="/completion" element={<ProtectedRoute><Completion /></ProtectedRoute>} />
-                  <Route path="/my-responses" element={<ProtectedRoute><MyResponses /></ProtectedRoute>} />
-                  <Route path="/transcribe" element={<ProtectedRoute><Transcribe /></ProtectedRoute>} />
-                  <Route path="/my-transcriptions" element={<ProtectedRoute><MyTranscriptions /></ProtectedRoute>} />
-                  <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-                  <Route path="/docs" element={<AdminRoute><Docs /></AdminRoute>} />
-                  <Route path="/update-password" element={<UpdatePassword />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-            </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <main id="main-content" tabIndex={-1} className="outline-none">
+                    <Routes>
+                      <Route path="/" element={<Login />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/signup" element={<Signup />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                      <Route path="/questions" element={<ProtectedRoute><Questions /></ProtectedRoute>} />
+                      <Route path="/completion" element={<ProtectedRoute><Completion /></ProtectedRoute>} />
+                      <Route path="/my-responses" element={<ProtectedRoute><MyResponses /></ProtectedRoute>} />
+                      <Route path="/transcribe" element={<ProtectedRoute><Transcribe /></ProtectedRoute>} />
+                      <Route path="/my-transcriptions" element={<ProtectedRoute><MyTranscriptions /></ProtectedRoute>} />
+                      <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+                      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                      <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+                      <Route path="/docs" element={<AdminRoute><Docs /></AdminRoute>} />
+                      <Route path="/update-password" element={<UpdatePassword />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+                </Suspense>
+              </ErrorBoundary>
             </PresenceTracker>
           </AuthProvider>
         </BrowserRouter>

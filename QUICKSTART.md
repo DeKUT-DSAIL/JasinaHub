@@ -35,7 +35,7 @@ git remote add upstream https://github.com/DeKUT-DSAIL/JasinaHub.git
 1. Create a free project on [supabase.com/dashboard](https://supabase.com/dashboard).
 2. Go to the **SQL Editor** (`>_`) in your project dashboard.
 3. Open [`supabase/setup_complete.sql`](supabase/setup_complete.sql), copy its contents, paste into the SQL Editor, and click **Run**.
-   *(This initializes all 13 tables, security policies, triggers, RPC procedures, storage buckets, and starter categories).*
+   *(This initializes all 14 tables including site_content, security policies, triggers, RPC procedures, storage buckets, and starter categories).*
 
 ---
 
@@ -83,6 +83,12 @@ ON CONFLICT (user_id, role) DO NOTHING;
 
 In the app, navigate to **Admin Panel** → **Tests** tab and click **Run all tests**.
 All Smoke, Auth, RLS, Storage, and RPC test suites should pass with green checks.
+
+---
+
+## 8. Customize Consent & Privacy Policy
+
+Navigate to **Admin Panel** → **Content** tab (`FileEdit` icon) to customize the project's **Consent Form** and **Privacy Policy** using the built-in Markdown editor with live preview. Changes save immediately to the database and reflect across the site without redeploying.
 
 ---
 

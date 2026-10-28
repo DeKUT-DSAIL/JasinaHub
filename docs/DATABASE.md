@@ -16,7 +16,7 @@ For new developers setting up JasinaHub for the first time, you do **not** need 
 
 This one-click script automatically configures:
 - All custom enums (`app_role`, `response_status`)
-- All 13 core relational tables and foreign keys
+- All 14 core relational tables and foreign keys (including `site_content`)
 - Automatic triggers (`set_profile_pseudonym` and `handle_new_user` on `auth.users`)
 - Stored procedures (`claim_random_transcription`, `release_transcription_lock`, `get_question_counts`, `get_admin_chart_data`, `get_transcription_stats`)
 - Row-Level Security (RLS) policies and table grants
@@ -95,6 +95,7 @@ See the full [Architecture & ERD Diagram in README.md](../README.md#database-arc
 - `user_progress` — Per-category question completion metrics.
 - `user_activity_logs` — Audit log of user actions and navigation.
 - `feedback_questions`, `feedback_submissions`, `feedback_answers` — Survey feedback pipeline.
+- `site_content` — Dynamic Markdown content for informed consent forms and privacy policies (editable by admins in `/admin`).
 - `password_reset_codes` — 6-digit short codes for password reset flow.
 
 ---
