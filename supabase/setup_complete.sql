@@ -132,6 +132,16 @@ CREATE TABLE IF NOT EXISTS public.user_progress (
   UNIQUE (user_id, category_id)
 );
 
+-- Site Content: Configurable consent form, privacy policy, etc.
+CREATE TABLE IF NOT EXISTS public.site_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL DEFAULT '',
+  content_md TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
 -- User Activity Logs: Audit log of platform actions
 CREATE TABLE IF NOT EXISTS public.user_activity_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -196,6 +206,16 @@ CREATE TABLE IF NOT EXISTS public.category_access_requests (
   reviewed_by UUID REFERENCES auth.users(id),
   admin_note TEXT,
   UNIQUE (user_id, category_id)
+);
+
+-- Site Content: Configurable consent form, privacy policy, etc.
+CREATE TABLE IF NOT EXISTS public.site_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL DEFAULT '',
+  content_md TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------------------------
@@ -796,7 +816,14 @@ CREATE POLICY "Admins can delete category access requests"
 -- ------------------------------------------------------------------------------
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT SELECT ON public.categories, public.feedback_questions TO anon;
+-- 6.13 site_content
+ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "site_content_read" ON public.site_content;
+CREATE POLICY "site_content_read" ON public.site_content FOR SELECT USING (true);
+DROP POLICY IF EXISTS "site_content_admin_write" ON public.site_content;
+CREATE POLICY "site_content_admin_write" ON public.site_content FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
+
+GRANT SELECT ON public.categories, public.feedback_questions, public.site_content TO anon;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_question_counts() TO anon, authenticated;
@@ -880,6 +907,12 @@ INSERT INTO public.questions (id, category_id, question_text, order_index) VALUE
   (gen_random_uuid(), '33333333-3333-3333-3333-333333333333', 'What advice is given to new mothers?', 1),
   (gen_random_uuid(), '33333333-3333-3333-3333-333333333333', 'How is prenatal care described locally?', 2)
 ON CONFLICT DO NOTHING;
+
+-- Seed default site content (consent form and privacy policy)
+INSERT INTO public.site_content (key, title, content_md) VALUES
+  ('consent_form', 'Data Collection Consent Form', ''),
+  ('privacy_policy', 'Privacy Policy', '')
+ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO public.feedback_questions (question_text, question_type, required, is_active, order_index) VALUES
   ('How would you rate your recording experience?', 'rating', true, true, 1)

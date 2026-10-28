@@ -109,7 +109,7 @@ export default function Dashboard() {
       const { data: questionsData } = await supabase
         .from('questions')
         .select('id, question_text, order_index')
-        .eq('category_id', '00000000-0000-0000-0000-000000000001')
+
         .order('order_index', { ascending: true });
 
       // Get unique user counts per question using the security definer function
@@ -218,9 +218,15 @@ export default function Dashboard() {
     loadDashboardData();
   }, [navigate]);
 
-  const handleStartCategory = (categoryId?: string) => {
-    const id = categoryId || '00000000-0000-0000-0000-000000000001';
-    navigate(`/questions?category=${id}`);
+  const handleStartCategory = (categoryId?: unknown) => {
+    if (typeof categoryId === 'string' && categoryId.trim()) {
+      navigate(`/questions?category=${encodeURIComponent(categoryId.trim())}`);
+    } else {
+      navigate('/questions');
+    }
+
+
+
   };
 
   const handleStartTranscribing = () => {
@@ -415,7 +421,7 @@ export default function Dashboard() {
                       Your contributions are helping improve healthcare for everyone. Ready for today's mission?
                     </p>
                     <div className="mt-8 flex flex-wrap gap-3">
-                      <Button onClick={handleStartCategory} className="rounded-2xl px-6 h-12 shadow-lg shadow-primary/20 gap-2">
+                      <Button onClick={() => handleStartCategory()} className="rounded-2xl px-6 h-12 shadow-lg shadow-primary/20 gap-2">
                         <Mic className="w-4 h-4" /> Start Recording
                       </Button>
                       <Button onClick={handleStartTranscribing} variant="outline" className="rounded-2xl px-6 h-12 gap-2 bg-card/50 backdrop-blur-sm">
@@ -463,6 +469,7 @@ export default function Dashboard() {
                 <CategoryBrowser
                   userId={userId}
                   isVerified={isVerified || isAdmin}
+                  isAdmin={isAdmin}
                   onStartCategory={handleStartCategory}
                 />
               )}

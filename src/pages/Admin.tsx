@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronRight, ChevronLeft, LogOut, ArrowLeft, Users, FileText, BarChart3, BookOpen, TableIcon, HardDriveDownload, Loader2, CheckCircle2, XCircle, Download, Upload, MoreHorizontal, PieChart, Headphones, Mic, Database, FlaskConical, MessageSquare, FolderKey } from "lucide-react";
+import { ChevronRight, ChevronLeft, LogOut, ArrowLeft, Users, FileText, BarChart3, BookOpen, TableIcon, HardDriveDownload, Loader2, CheckCircle2, XCircle, Download, Upload, MoreHorizontal, PieChart, Headphones, Mic, Database, FlaskConical, MessageSquare, FolderKey, FileEdit } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ import { AdminDocumentationTab } from "@/components/Admin/AdminDocumentationTab"
 import { AdminTestsTab } from "@/components/Admin/AdminTestsTab";
 import { AdminFeedbackTab } from "@/components/Admin/AdminFeedbackTab";
 import { AdminCategoryAccessTab } from "@/components/Admin/AdminCategoryAccessTab";
+import { AdminContentTab } from "@/components/Admin/AdminContentTab";
 
 interface Question {
   id: string;
@@ -115,6 +116,7 @@ export default function Admin() {
     dataset: { title: 'Dataset', subtitle: 'Inspect and export the curated ASR dataset.' },
     feedback: { title: 'Feedback', subtitle: 'Read what users are telling you about JasinaHub.' },
     category_access: { title: 'Category Access', subtitle: 'Review and action user requests to record in specific categories.' },
+    content: { title: 'Content Management', subtitle: 'Edit the consent form and privacy policy stored in the database.' },
     documentation: { title: 'Documentation', subtitle: 'Project documentation and resources.' },
     tests: { title: 'Tests', subtitle: 'Run platform health and integration tests.' },
   };
@@ -590,6 +592,7 @@ export default function Admin() {
           <SidebarItem icon={Database} label="Dataset" value="dataset" />
           <SidebarItem icon={MessageSquare} label="Feedback" value="feedback" />
           <SidebarItem icon={FolderKey} label="Category Access" value="category_access" badgeCount={pendingCategoryRequests} />
+          <SidebarItem icon={FileEdit} label="Content" value="content" />
 
           <div className="pt-4 mt-4 border-t border-border/50">
             <SidebarItem icon={BookOpen} label="Documentation" value="documentation" />
@@ -812,6 +815,10 @@ export default function Admin() {
 
             <TabsContent value="category_access">
               <AdminCategoryAccessTab />
+            </TabsContent>
+
+            <TabsContent value="content">
+              <AdminContentTab />
             </TabsContent>
 
             <TabsContent value="documentation">

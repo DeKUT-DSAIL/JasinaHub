@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Shield, Lock, UserCheck, Trash2, Download, Scale } from "lucide-react";
@@ -403,6 +405,21 @@ const highlights = [
 ];
 
 export default function PrivacyPolicy() {
+  const [dbPolicy, setDbPolicy] = useState<{ title: string; content_md: string; updated_at?: string } | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('site_content')
+      .select('title, content_md, updated_at')
+      .eq('key', 'privacy_policy')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && (data as any).content_md?.trim()) {
+          setDbPolicy(data as { title: string; content_md: string; updated_at?: string });
+        }
+      })
+      .catch(() => {});
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/70 backdrop-blur-md sticky top-0 z-20">
@@ -420,6 +437,30 @@ export default function PrivacyPolicy() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-10 space-y-10">
+        {dbPolicy ? (
+          <article className="space-y-6">
+            <section className="space-y-3">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                {dbPolicy.title || "JasinaHub Privacy Policy"}
+              </h1>
+              {dbPolicy.updated_at && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Scale className="w-3.5 h-3.5" /> Last updated:{" "}
+                  {new Date(dbPolicy.updated_at).toLocaleDateString("en-KE", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              )}
+            </section>
+
+            <div className="rounded-2xl border border-border/50 bg-card/40 p-6 sm:p-8 text-sm leading-relaxed text-foreground whitespace-pre-wrap font-sans">
+              {dbPolicy.content_md}
+            </div>
+          </article>
+        ) : (
+          <>
         <section className="space-y-3">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">JasinaHub Privacy Policy</h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -472,6 +513,8 @@ export default function PrivacyPolicy() {
             </section>
           ))}
         </article>
+          </>
+        )}
       </main>
     </div>
   );
