@@ -1,6 +1,6 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, RefreshCw, Home } from "lucide-react";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught an uncaught error:", error, errorInfo);
+    console.error('ErrorBoundary caught an uncaught error:', error, errorInfo);
   }
 
   public handleReset = () => {
@@ -32,7 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public handleGoDashboard = () => {
     this.setState({ hasError: false, error: null });
-    window.location.href = "/dashboard";
+    window.location.href = '/dashboard';
   };
 
   public render() {
@@ -45,9 +45,12 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Something went wrong</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                Something went wrong
+              </h1>
               <p className="text-sm text-slate-500 leading-relaxed">
-                The recording view encountered an unexpected issue. You can try refreshing or return to the dashboard.
+                The recording view encountered an unexpected issue. You can try
+                refreshing or return to the dashboard.
               </p>
             </div>
 
@@ -80,4 +83,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

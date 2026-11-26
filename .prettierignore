@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+bun.lockb
+package-lock.json
+stats.html
+*.pdf
+*.png
+*.jpg
+*.webp
+*.svg
+*.woff2
+public/

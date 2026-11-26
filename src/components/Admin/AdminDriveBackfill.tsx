@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import {
   HardDriveDownload,
   Loader2,
@@ -13,7 +13,7 @@ import {
   Search,
   Link,
   AlertTriangle,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface MissingRecord {
   id: string;
@@ -27,7 +27,7 @@ interface MatchResult {
   responseId: string;
   filename: string;
   driveFileId: string;
-  status: "matched" | "not_found";
+  status: 'matched' | 'not_found';
 }
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -35,11 +35,18 @@ const DRIVE_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID;
 
 export function AdminDriveBackfill() {
   const { toast } = useToast();
-  const [phase, setPhase] = useState<"idle" | "authenticating" | "scanning" | "matching" | "updating" | "done">("idle");
+  const [phase, setPhase] = useState<
+    'idle' | 'authenticating' | 'scanning' | 'matching' | 'updating' | 'done'
+  >('idle');
   const [missingRecords, setMissingRecords] = useState<MissingRecord[]>([]);
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [progress, setProgress] = useState(0);
-  const [stats, setStats] = useState({ total: 0, matched: 0, notFound: 0, updated: 0 });
+  const [stats, setStats] = useState({
+    total: 0,
+    matched: 0,
+    notFound: 0,
+    updated: 0,
+  });
 
   const loadGIS = (): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -47,11 +54,12 @@ export function AdminDriveBackfill() {
         resolve();
         return;
       }
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Failed to load Google Identity Services"));
+      script.onerror = () =>
+        reject(new Error('Failed to load Google Identity Services'));
       document.head.appendChild(script);
     });
   };
@@ -62,7 +70,7 @@ export function AdminDriveBackfill() {
     return new Promise((resolve, reject) => {
       const client = (window as any).google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
-        scope: "https://www.googleapis.com/auth/drive.readonly",
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
         callback: (response: any) => {
           if (response.error) {
             reject(new Error(response.error));
@@ -72,25 +80,30 @@ export function AdminDriveBackfill() {
         },
       });
 
-      client.requestAccessToken({ prompt: "" });
+      client.requestAccessToken({ prompt: '' });
     });
   };
 
-  const listAllDriveFiles = async (token: string): Promise<Map<string, string>> => {
+  const listAllDriveFiles = async (
+    token: string
+  ): Promise<Map<string, string>> => {
     const fileMap = new Map<string, string>(); // filename -> fileId
     let pageToken: string | undefined;
 
     do {
       const params = new URLSearchParams({
         q: `'${DRIVE_FOLDER_ID}' in parents and trashed = false`,
-        fields: "nextPageToken, files(id, name)",
-        pageSize: "1000",
+        fields: 'nextPageToken, files(id, name)',
+        pageSize: '1000',
       });
-      if (pageToken) params.set("pageToken", pageToken);
+      if (pageToken) params.set('pageToken', pageToken);
 
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files?${params}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!res.ok) throw new Error(`Drive API error: ${res.status}`);
 
@@ -107,18 +120,21 @@ export function AdminDriveBackfill() {
   const runBackfill = async () => {
     try {
       // Step 1: Get missing records from DB
-      setPhase("scanning");
+      setPhase('scanning');
       setProgress(10);
 
       const { data: missing, error } = await supabase
-        .from("voice_responses")
-        .select("id, question_id, user_id")
-        .is("audio_file_url", null);
+        .from('voice_responses')
+        .select('id, question_id, user_id')
+        .is('audio_file_url', null);
 
       if (error) throw error;
       if (!missing || missing.length === 0) {
-        toast({ title: "No missing URLs", description: "All recordings already have URLs." });
-        setPhase("idle");
+        toast({
+          title: 'No missing URLs',
+          description: 'All recordings already have URLs.',
+        });
+        setPhase('idle');
         return;
       }
 
@@ -127,18 +143,26 @@ export function AdminDriveBackfill() {
       const questionIds = [...new Set(missing.map((r) => r.question_id))];
 
       const [profilesRes, questionsRes] = await Promise.all([
-        supabase.from("profiles").select("id, first_name, last_name").in("id", userIds),
-        supabase.from("questions").select("id, order_index").in("id", questionIds),
+        supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', userIds),
+        supabase
+          .from('questions')
+          .select('id, order_index')
+          .in('id', questionIds),
       ]);
 
       const profileMap = new Map(profilesRes.data?.map((p) => [p.id, p]) || []);
-      const questionMap = new Map(questionsRes.data?.map((q) => [q.id, q]) || []);
+      const questionMap = new Map(
+        questionsRes.data?.map((q) => [q.id, q]) || []
+      );
 
       const records: MissingRecord[] = missing.map((r) => {
         const profile = profileMap.get(r.user_id);
         const question = questionMap.get(r.question_id);
-        const firstName = profile?.first_name || "Unknown";
-        const lastName = profile?.last_name || "Unknown";
+        const firstName = profile?.first_name || 'Unknown';
+        const lastName = profile?.last_name || 'Unknown';
         const qNum = (question?.order_index ?? 0) + 1;
         return {
           id: r.id,
@@ -154,17 +178,17 @@ export function AdminDriveBackfill() {
       setProgress(20);
 
       // Step 2: Auth with Google
-      setPhase("authenticating");
+      setPhase('authenticating');
       const token = await getGoogleToken();
       setProgress(30);
 
       // Step 3: List all Drive files
-      setPhase("matching");
+      setPhase('matching');
       const driveFiles = await listAllDriveFiles(token);
       setProgress(50);
 
       toast({
-        title: "Drive scanned",
+        title: 'Drive scanned',
         description: `Found ${driveFiles.size} files in the Drive folder.`,
       });
 
@@ -178,10 +202,20 @@ export function AdminDriveBackfill() {
         const driveId = driveFiles.get(filename);
 
         if (driveId) {
-          results.push({ responseId: record.id, filename: record.expected_filename, driveFileId: driveId, status: "matched" });
+          results.push({
+            responseId: record.id,
+            filename: record.expected_filename,
+            driveFileId: driveId,
+            status: 'matched',
+          });
           matched++;
         } else {
-          results.push({ responseId: record.id, filename: record.expected_filename, driveFileId: "", status: "not_found" });
+          results.push({
+            responseId: record.id,
+            filename: record.expected_filename,
+            driveFileId: '',
+            status: 'not_found',
+          });
           notFound++;
         }
       }
@@ -191,8 +225,8 @@ export function AdminDriveBackfill() {
       setProgress(70);
 
       // Step 5: Update matched records in DB
-      setPhase("updating");
-      const matchedResults = results.filter((r) => r.status === "matched");
+      setPhase('updating');
+      const matchedResults = results.filter((r) => r.status === 'matched');
       let updated = 0;
 
       for (let i = 0; i < matchedResults.length; i++) {
@@ -200,9 +234,9 @@ export function AdminDriveBackfill() {
         const driveUrl = `https://drive.google.com/file/d/${r.driveFileId}/view`;
 
         const { error: updateError } = await supabase
-          .from("voice_responses")
+          .from('voice_responses')
           .update({ audio_file_url: driveUrl })
-          .eq("id", r.responseId);
+          .eq('id', r.responseId);
 
         if (!updateError) updated++;
 
@@ -210,26 +244,26 @@ export function AdminDriveBackfill() {
       }
 
       setStats((s) => ({ ...s, updated }));
-      setPhase("done");
+      setPhase('done');
       setProgress(100);
 
       toast({
-        title: "Backfill complete",
+        title: 'Backfill complete',
         description: `Updated ${updated} of ${matched} matched records. ${notFound} files not found in Drive.`,
       });
     } catch (err) {
-      console.error("Backfill error:", err);
+      console.error('Backfill error:', err);
       toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Backfill failed",
-        variant: "destructive",
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Backfill failed',
+        variant: 'destructive',
       });
-      setPhase("idle");
+      setPhase('idle');
     }
   };
 
   const reset = () => {
-    setPhase("idle");
+    setPhase('idle');
     setProgress(0);
     setMissingRecords([]);
     setMatchResults([]);
@@ -244,48 +278,67 @@ export function AdminDriveBackfill() {
           Backfill Missing Audio URLs
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Scans Google Drive for files matching records with missing audio URLs and links them.
+          Scans Google Drive for files matching records with missing audio URLs
+          and links them.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {phase === "idle" && (
+        {phase === 'idle' && (
           <Button onClick={runBackfill} className="gap-2">
             <Search className="w-4 h-4" />
             Scan & Match Drive Files
           </Button>
         )}
 
-        {phase !== "idle" && phase !== "done" && (
+        {phase !== 'idle' && phase !== 'done' && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              {phase === "scanning" && "Fetching records with missing URLs..."}
-              {phase === "authenticating" && "Authenticating with Google Drive..."}
-              {phase === "matching" && "Matching files to records..."}
-              {phase === "updating" && `Updating database... (${stats.updated}/${stats.matched})`}
+              {phase === 'scanning' && 'Fetching records with missing URLs...'}
+              {phase === 'authenticating' &&
+                'Authenticating with Google Drive...'}
+              {phase === 'matching' && 'Matching files to records...'}
+              {phase === 'updating' &&
+                `Updating database... (${stats.updated}/${stats.matched})`}
             </div>
             <Progress value={progress} className="h-2" />
           </div>
         )}
 
-        {phase === "done" && (
+        {phase === 'done' && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="bg-muted/50 rounded-lg p-3 text-center">
-                <p className="text-lg font-bold text-foreground">{stats.total}</p>
-                <p className="text-[10px] text-muted-foreground uppercase font-medium">Missing</p>
+                <p className="text-lg font-bold text-foreground">
+                  {stats.total}
+                </p>
+                <p className="text-[10px] text-muted-foreground uppercase font-medium">
+                  Missing
+                </p>
               </div>
               <div className="bg-emerald-50 rounded-lg p-3 text-center">
-                <p className="text-lg font-bold text-emerald-600">{stats.matched}</p>
-                <p className="text-[10px] text-emerald-600/70 uppercase font-medium">Matched</p>
+                <p className="text-lg font-bold text-emerald-600">
+                  {stats.matched}
+                </p>
+                <p className="text-[10px] text-emerald-600/70 uppercase font-medium">
+                  Matched
+                </p>
               </div>
               <div className="bg-blue-50 rounded-lg p-3 text-center">
-                <p className="text-lg font-bold text-blue-600">{stats.updated}</p>
-                <p className="text-[10px] text-blue-600/70 uppercase font-medium">Updated</p>
+                <p className="text-lg font-bold text-blue-600">
+                  {stats.updated}
+                </p>
+                <p className="text-[10px] text-blue-600/70 uppercase font-medium">
+                  Updated
+                </p>
               </div>
               <div className="bg-amber-50 rounded-lg p-3 text-center">
-                <p className="text-lg font-bold text-amber-600">{stats.notFound}</p>
-                <p className="text-[10px] text-amber-600/70 uppercase font-medium">Not Found</p>
+                <p className="text-lg font-bold text-amber-600">
+                  {stats.notFound}
+                </p>
+                <p className="text-[10px] text-amber-600/70 uppercase font-medium">
+                  Not Found
+                </p>
               </div>
             </div>
 
@@ -293,13 +346,17 @@ export function AdminDriveBackfill() {
               <div className="max-h-40 overflow-y-auto border border-border/50 rounded-lg">
                 <div className="p-2 text-xs space-y-1">
                   <p className="font-medium text-muted-foreground flex items-center gap-1 mb-2">
-                    <AlertTriangle className="w-3 h-3" /> Files not found in Drive:
+                    <AlertTriangle className="w-3 h-3" /> Files not found in
+                    Drive:
                   </p>
                   {matchResults
-                    .filter((r) => r.status === "not_found")
+                    .filter((r) => r.status === 'not_found')
                     .slice(0, 50)
                     .map((r) => (
-                      <p key={r.responseId} className="text-muted-foreground truncate">
+                      <p
+                        key={r.responseId}
+                        className="text-muted-foreground truncate"
+                      >
                         {r.filename}
                       </p>
                     ))}

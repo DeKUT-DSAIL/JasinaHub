@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,18 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Search, RefreshCw, Activity, Eye, LogIn, LogOut, Mic, CheckCircle, FolderOpen, UserCog } from 'lucide-react';
+import {
+  Search,
+  RefreshCw,
+  Activity,
+  Eye,
+  LogIn,
+  LogOut,
+  Mic,
+  CheckCircle,
+  FolderOpen,
+  UserCog,
+} from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 interface ActivityLog {
@@ -69,7 +80,8 @@ const actionColors: Record<string, string> = {
   login: 'bg-green-500/10 text-green-500 border-green-500/20',
   logout: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   recording_started: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  recording_completed: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  recording_completed:
+    'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
   question_answered: 'bg-teal-500/10 text-teal-500 border-teal-500/20',
   category_opened: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
   profile_updated: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
@@ -78,6 +90,7 @@ const actionColors: Record<string, string> = {
 export const AdminActivityLogsTab: React.FC = () => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const usersRef = useRef<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAction, setSelectedAction] = useState<string>('all');
@@ -112,10 +125,10 @@ export const AdminActivityLogsTab: React.FC = () => {
           ...log,
           user: user
             ? {
-              first_name: user.first_name,
-              last_name: user.last_name,
-              email: user.email,
-            }
+                first_name: user.first_name,
+                last_name: user.last_name,
+                email: user.email,
+              }
             : undefined,
         };
       });
@@ -127,6 +140,10 @@ export const AdminActivityLogsTab: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    usersRef.current = users;
+  }, [users]);
 
   useEffect(() => {
     fetchLogs();
@@ -143,16 +160,16 @@ export const AdminActivityLogsTab: React.FC = () => {
         },
         (payload) => {
           const newLog = payload.new as ActivityLog;
-          const user = users.find((u) => u.id === newLog.user_id);
+          const user = usersRef.current.find((u) => u.id === newLog.user_id);
           setLogs((prev) => [
             {
               ...newLog,
               user: user
                 ? {
-                  first_name: user.first_name,
-                  last_name: user.last_name,
-                  email: user.email,
-                }
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    email: user.email,
+                  }
                 : undefined,
             },
             ...prev,
@@ -175,14 +192,20 @@ export const AdminActivityLogsTab: React.FC = () => {
     return logs.filter((log) => {
       const matchesSearch =
         searchQuery === '' ||
-        log.user?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.user?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.user?.first_name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        log.user?.last_name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         log.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.page?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesAction = selectedAction === 'all' || log.action === selectedAction;
-      const matchesUser = selectedUser === 'all' || log.user_id === selectedUser;
+      const matchesAction =
+        selectedAction === 'all' || log.action === selectedAction;
+      const matchesUser =
+        selectedUser === 'all' || log.user_id === selectedUser;
 
       return matchesSearch && matchesAction && matchesUser;
     });
@@ -298,7 +321,10 @@ export const AdminActivityLogsTab: React.FC = () => {
           <TableBody>
             {paginatedLogs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No activity logs found
                 </TableCell>
               </TableRow>
@@ -310,22 +336,31 @@ export const AdminActivityLogsTab: React.FC = () => {
                       <p className="font-medium text-foreground">
                         {log.user?.first_name || log.user?.last_name
                           ? `${log.user.first_name || ''} ${log.user.last_name || ''}`.trim()
-                          : (log.user?.email || "User " + log.user_id.slice(0, 8))}
+                          : log.user?.email ||
+                            'User ' + log.user_id.slice(0, 8)}
                       </p>
-                      <p className="text-xs text-muted-foreground">{log.user?.email || "No email provided"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {log.user?.email || 'No email provided'}
+                      </p>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant="outline"
-                      className={`flex items-center gap-1 w-fit ${actionColors[log.action] || 'bg-muted text-muted-foreground border-border'
-                        }`}
+                      className={`flex items-center gap-1 w-fit ${
+                        actionColors[log.action] ||
+                        'bg-muted text-muted-foreground border-border'
+                      }`}
                     >
-                      {actionIcons[log.action] || <Activity className="h-4 w-4" />}
+                      {actionIcons[log.action] || (
+                        <Activity className="h-4 w-4" />
+                      )}
                       {log.action.replace(/_/g, ' ')}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{log.page || '-'}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {log.page || '-'}
+                  </TableCell>
                   <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
                     {formatDetails(log.details)}
                   </TableCell>
@@ -335,7 +370,9 @@ export const AdminActivityLogsTab: React.FC = () => {
                         {format(new Date(log.created_at), 'MMM d, HH:mm')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(log.created_at), {
+                          addSuffix: true,
+                        })}
                       </p>
                     </div>
                   </TableCell>
@@ -353,7 +390,11 @@ export const AdminActivityLogsTab: React.FC = () => {
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                className={
+                  currentPage === 1
+                    ? 'pointer-events-none opacity-50'
+                    : 'cursor-pointer'
+                }
               />
             </PaginationItem>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -381,9 +422,13 @@ export const AdminActivityLogsTab: React.FC = () => {
             })}
             <PaginationItem>
               <PaginationNext
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 className={
-                  currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                  currentPage === totalPages
+                    ? 'pointer-events-none opacity-50'
+                    : 'cursor-pointer'
                 }
               />
             </PaginationItem>

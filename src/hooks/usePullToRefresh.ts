@@ -17,40 +17,46 @@ export const usePullToRefresh = ({
   const startY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!enabled || isRefreshing) return;
-    
-    // Only enable pull-to-refresh when scrolled to top
-    const scrollTop = containerRef.current?.scrollTop || window.scrollY;
-    if (scrollTop > 0) return;
-    
-    startY.current = e.touches[0].clientY;
-    setIsPulling(true);
-  }, [enabled, isRefreshing]);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!enabled || isRefreshing) return;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isPulling || !enabled || isRefreshing) return;
-    
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY.current;
-    
-    if (diff > 0) {
-      // Apply resistance to the pull
-      const resistance = 0.4;
-      const distance = Math.min(diff * resistance, threshold * 1.5);
-      setPullDistance(distance);
-    }
-  }, [isPulling, enabled, isRefreshing, threshold]);
+      // Only enable pull-to-refresh when scrolled to top
+      const scrollTop = containerRef.current?.scrollTop || window.scrollY;
+      if (scrollTop > 0) return;
+
+      startY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    },
+    [enabled, isRefreshing]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isPulling || !enabled || isRefreshing) return;
+
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY.current;
+
+      if (diff > 0) {
+        // Apply resistance to the pull
+        const resistance = 0.4;
+        const distance = Math.min(diff * resistance, threshold * 1.5);
+        setPullDistance(distance);
+      }
+    },
+    [isPulling, enabled, isRefreshing, threshold]
+  );
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPulling) return;
-    
+
     setIsPulling(false);
-    
+
     if (pullDistance >= threshold && !isRefreshing) {
       setIsRefreshing(true);
       setPullDistance(threshold);
-      
+
       try {
         await onRefresh();
       } finally {

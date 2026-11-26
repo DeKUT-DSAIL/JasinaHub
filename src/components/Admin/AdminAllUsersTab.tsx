@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -8,14 +8,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/collapsible';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Search,
   Download,
@@ -29,9 +29,9 @@ import {
   Loader2,
   Play,
   FileText,
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserWithStats {
   id: string;
@@ -68,47 +68,55 @@ const formatDuration = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
-  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
 export function AdminAllUsersTab() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithStats[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState<keyof UserWithStats>("total_responses");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortField, setSortField] =
+    useState<keyof UserWithStats>('total_responses');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
-  const [userResponses, setUserResponses] = useState<Record<string, UserResponse[]>>({});
-  const [loadingResponses, setLoadingResponses] = useState<Set<string>>(new Set());
+  const [userResponses, setUserResponses] = useState<
+    Record<string, UserResponse[]>
+  >({});
+  const [loadingResponses, setLoadingResponses] = useState<Set<string>>(
+    new Set()
+  );
 
-  useEffect(() => {
-    loadUserStats();
-  }, []);
-
-  const loadUserStats = async () => {
+  const loadUserStats = useCallback(async () => {
     try {
       setLoading(true);
 
       // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, email, phone_number, verified, created_at")
-        .order("created_at", { ascending: false });
+        .from('profiles')
+        .select(
+          'id, first_name, last_name, email, phone_number, verified, created_at'
+        )
+        .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
       // Fetch all responses with pagination to bypass 1000 row limit
-      const allResponses: { user_id: string; status: string; response_type: string | null; duration_seconds: number | null }[] = [];
+      const allResponses: {
+        user_id: string;
+        status: string;
+        response_type: string | null;
+        duration_seconds: number | null;
+      }[] = [];
       let offset = 0;
       const batchSize = 1000;
       let hasMore = true;
 
       while (hasMore) {
         const { data: batch, error: batchError } = await supabase
-          .from("voice_responses")
-          .select("user_id, status, response_type, duration_seconds")
+          .from('voice_responses')
+          .select('user_id, status, response_type, duration_seconds')
           .range(offset, offset + batchSize - 1);
 
         if (batchError) throw batchError;
@@ -123,16 +131,19 @@ export function AdminAllUsersTab() {
       }
 
       // Aggregate stats per user
-      const userStatsMap: Record<string, {
-        total_responses: number;
-        total_recordings: number;
-        total_duration_seconds: number;
-        accepted_count: number;
-        accepted_duration_seconds: number;
-        rejected_count: number;
-        rejected_duration_seconds: number;
-        pending_count: number;
-      }> = {};
+      const userStatsMap: Record<
+        string,
+        {
+          total_responses: number;
+          total_recordings: number;
+          total_duration_seconds: number;
+          accepted_count: number;
+          accepted_duration_seconds: number;
+          rejected_count: number;
+          rejected_duration_seconds: number;
+          pending_count: number;
+        }
+      > = {};
 
       allResponses.forEach((response) => {
         if (!userStatsMap[response.user_id]) {
@@ -153,16 +164,19 @@ export function AdminAllUsersTab() {
         const duration = response.duration_seconds || 0;
 
         // Count recordings (voice responses) and add duration
-        if (response.response_type === "voice" || response.response_type === null) {
+        if (
+          response.response_type === 'voice' ||
+          response.response_type === null
+        ) {
           stats.total_recordings += 1;
           stats.total_duration_seconds += duration;
         }
 
         // Count by status and track duration
-        if (response.status === "accepted") {
+        if (response.status === 'accepted') {
           stats.accepted_count += 1;
           stats.accepted_duration_seconds += duration;
-        } else if (response.status === "rejected") {
+        } else if (response.status === 'rejected') {
           stats.rejected_count += 1;
           stats.rejected_duration_seconds += duration;
         } else {
@@ -171,30 +185,39 @@ export function AdminAllUsersTab() {
       });
 
       // Combine profiles with stats
-      const usersWithStats: UserWithStats[] = (profiles || []).map((profile) => ({
-        ...profile,
-        total_responses: userStatsMap[profile.id]?.total_responses || 0,
-        total_recordings: userStatsMap[profile.id]?.total_recordings || 0,
-        total_duration_seconds: userStatsMap[profile.id]?.total_duration_seconds || 0,
-        accepted_count: userStatsMap[profile.id]?.accepted_count || 0,
-        accepted_duration_seconds: userStatsMap[profile.id]?.accepted_duration_seconds || 0,
-        rejected_count: userStatsMap[profile.id]?.rejected_count || 0,
-        rejected_duration_seconds: userStatsMap[profile.id]?.rejected_duration_seconds || 0,
-        pending_count: userStatsMap[profile.id]?.pending_count || 0,
-      }));
+      const usersWithStats: UserWithStats[] = (profiles || []).map(
+        (profile) => ({
+          ...profile,
+          total_responses: userStatsMap[profile.id]?.total_responses || 0,
+          total_recordings: userStatsMap[profile.id]?.total_recordings || 0,
+          total_duration_seconds:
+            userStatsMap[profile.id]?.total_duration_seconds || 0,
+          accepted_count: userStatsMap[profile.id]?.accepted_count || 0,
+          accepted_duration_seconds:
+            userStatsMap[profile.id]?.accepted_duration_seconds || 0,
+          rejected_count: userStatsMap[profile.id]?.rejected_count || 0,
+          rejected_duration_seconds:
+            userStatsMap[profile.id]?.rejected_duration_seconds || 0,
+          pending_count: userStatsMap[profile.id]?.pending_count || 0,
+        })
+      );
 
       setUsers(usersWithStats);
     } catch (error) {
-      console.error("Error loading user stats:", error);
+      console.error('Error loading user stats:', error);
       toast({
-        title: "Error",
-        description: "Failed to load user statistics",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load user statistics',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadUserStats();
+  }, [loadUserStats]);
 
   // Filter users based on search
   const filteredUsers = useMemo(() => {
@@ -216,14 +239,14 @@ export function AdminAllUsersTab() {
       const aValue = a[sortField];
       const bValue = b[sortField];
 
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortDirection === "asc"
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       }
 
       return 0;
@@ -245,10 +268,10 @@ export function AdminAllUsersTab() {
   // Handle sort
   const handleSort = (field: keyof UserWithStats) => {
     if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
-      setSortDirection("desc");
+      setSortDirection('desc');
     }
   };
 
@@ -272,34 +295,42 @@ export function AdminAllUsersTab() {
       try {
         // Fetch responses with question details
         const { data: responses, error } = await supabase
-          .from("voice_responses")
-          .select("id, question_id, status, duration_seconds, audio_file_url, created_at")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+          .from('voice_responses')
+          .select(
+            'id, question_id, status, duration_seconds, audio_file_url, created_at'
+          )
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         // Fetch question texts
-        const questionIds = [...new Set(responses?.map((r) => r.question_id) || [])];
+        const questionIds = [
+          ...new Set(responses?.map((r) => r.question_id) || []),
+        ];
         const { data: questions } = await supabase
-          .from("questions")
-          .select("id, question_text")
-          .in("id", questionIds);
+          .from('questions')
+          .select('id, question_text')
+          .in('id', questionIds);
 
-        const questionMap = new Map(questions?.map((q) => [q.id, q.question_text]) || []);
+        const questionMap = new Map(
+          questions?.map((q) => [q.id, q.question_text]) || []
+        );
 
-        const enrichedResponses: UserResponse[] = (responses || []).map((r) => ({
-          ...r,
-          question_text: questionMap.get(r.question_id) || "Unknown Question",
-        }));
+        const enrichedResponses: UserResponse[] = (responses || []).map(
+          (r) => ({
+            ...r,
+            question_text: questionMap.get(r.question_id) || 'Unknown Question',
+          })
+        );
 
         setUserResponses((prev) => ({ ...prev, [userId]: enrichedResponses }));
       } catch (error) {
-        console.error("Error loading user responses:", error);
+        console.error('Error loading user responses:', error);
         toast({
-          title: "Error",
-          description: "Failed to load user responses",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to load user responses',
+          variant: 'destructive',
         });
       } finally {
         setLoadingResponses((prev) => {
@@ -314,31 +345,52 @@ export function AdminAllUsersTab() {
   // Get status badge color
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "accepted":
-        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Accepted</Badge>;
-      case "rejected":
-        return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">Rejected</Badge>;
+      case 'accepted':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-500/10 text-green-500 border-green-500/20"
+          >
+            Accepted
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-500/10 text-red-500 border-red-500/20"
+          >
+            Rejected
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">Pending</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="bg-amber-500/10 text-amber-500 border-amber-500/20"
+          >
+            Pending
+          </Badge>
+        );
     }
   };
 
   // Export to CSV
   const handleExportCSV = () => {
     const headers = [
-      "First Name",
-      "Last Name",
-      "Email",
-      "Phone Number",
-      "Verified",
-      "Total Responses",
-      "Total Duration",
-      "Accepted Count",
-      "Accepted Duration",
-      "Rejected Count",
-      "Rejected Duration",
-      "Pending Count",
-      "Joined Date",
+      'First Name',
+      'Last Name',
+      'Email',
+      'Phone Number',
+      'Verified',
+      'Total Responses',
+      'Total Duration',
+      'Accepted Count',
+      'Accepted Duration',
+      'Rejected Count',
+      'Rejected Duration',
+      'Pending Count',
+      'Joined Date',
     ];
 
     const rows = sortedUsers.map((user) => [
@@ -346,7 +398,7 @@ export function AdminAllUsersTab() {
       user.last_name,
       user.email,
       user.phone_number,
-      user.verified ? "Yes" : "No",
+      user.verified ? 'Yes' : 'No',
       user.total_responses.toString(),
       formatDuration(user.total_duration_seconds),
       user.accepted_count.toString(),
@@ -358,31 +410,31 @@ export function AdminAllUsersTab() {
     ]);
 
     const csvContent = [
-      headers.join(","),
+      headers.join(','),
       ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
       ),
-    ].join("\n");
+    ].join('\n');
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `all_users_stats_${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `all_users_stats_${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
+      title: 'Export Complete',
       description: `Exported ${sortedUsers.length} users to CSV`,
     });
   };
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
-    const pages: (number | "ellipsis")[] = [];
+    const pages: (number | 'ellipsis')[] = [];
     const maxVisible = 5;
 
     if (totalPages <= maxVisible) {
@@ -392,17 +444,17 @@ export function AdminAllUsersTab() {
     } else {
       if (currentPage <= 3) {
         for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("ellipsis");
+        pages.push('ellipsis');
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         pages.push(1);
-        pages.push("ellipsis");
+        pages.push('ellipsis');
         for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
       } else {
         pages.push(1);
-        pages.push("ellipsis");
+        pages.push('ellipsis');
         for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("ellipsis");
+        pages.push('ellipsis');
         pages.push(totalPages);
       }
     }
@@ -424,7 +476,9 @@ export function AdminAllUsersTab() {
       <div className="flex items-center gap-1">
         {children}
         {sortField === field && (
-          <span className="text-primary">{sortDirection === "asc" ? "↑" : "↓"}</span>
+          <span className="text-primary">
+            {sortDirection === 'asc' ? '↑' : '↓'}
+          </span>
         )}
       </div>
     </TableHead>
@@ -444,7 +498,9 @@ export function AdminAllUsersTab() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="text-center sm:text-left">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">All Users Overview</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+          All Users Overview
+        </h2>
         <p className="text-muted-foreground text-sm sm:text-base">
           View all users with their response statistics
         </p>
@@ -490,10 +546,18 @@ export function AdminAllUsersTab() {
                   <SortableHeader field="email">Email</SortableHeader>
                   <TableHead className="whitespace-nowrap">Phone</TableHead>
                   <SortableHeader field="verified">Status</SortableHeader>
-                  <SortableHeader field="total_responses">Responses</SortableHeader>
-                  <SortableHeader field="total_duration_seconds">Duration</SortableHeader>
-                  <SortableHeader field="accepted_count">Accepted</SortableHeader>
-                  <SortableHeader field="rejected_count">Rejected</SortableHeader>
+                  <SortableHeader field="total_responses">
+                    Responses
+                  </SortableHeader>
+                  <SortableHeader field="total_duration_seconds">
+                    Duration
+                  </SortableHeader>
+                  <SortableHeader field="accepted_count">
+                    Accepted
+                  </SortableHeader>
+                  <SortableHeader field="rejected_count">
+                    Rejected
+                  </SortableHeader>
                   <SortableHeader field="pending_count">Pending</SortableHeader>
                 </TableRow>
               </TableHeader>
@@ -507,8 +571,11 @@ export function AdminAllUsersTab() {
                     <>
                       <TableRow
                         key={user.id}
-                        className={`hover:bg-accent/10 cursor-pointer ${isExpanded ? "bg-accent/10" : ""}`}
-                        onClick={() => user.total_responses > 0 && toggleUserExpanded(user.id)}
+                        className={`hover:bg-accent/10 cursor-pointer ${isExpanded ? 'bg-accent/10' : ''}`}
+                        onClick={() =>
+                          user.total_responses > 0 &&
+                          toggleUserExpanded(user.id)
+                        }
                       >
                         <TableCell className="w-10 p-2">
                           {user.total_responses > 0 && (
@@ -538,17 +605,18 @@ export function AdminAllUsersTab() {
                           {user.email}
                         </TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">
-                          {user.phone_number || "-"}
+                          {user.phone_number || '-'}
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={user.verified ? "default" : "secondary"}
-                            className={`text-xs ${user.verified
-                                ? "bg-green-500/10 text-green-500 border-green-500/20"
-                                : "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                              }`}
+                            variant={user.verified ? 'default' : 'secondary'}
+                            className={`text-xs ${
+                              user.verified
+                                ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                            }`}
                           >
-                            {user.verified ? "Verified" : "Pending"}
+                            {user.verified ? 'Verified' : 'Pending'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center font-medium">
@@ -559,7 +627,10 @@ export function AdminAllUsersTab() {
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex flex-col items-center gap-0.5">
-                            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+                            <Badge
+                              variant="outline"
+                              className="bg-green-500/10 text-green-500 border-green-500/20"
+                            >
                               {user.accepted_count}
                             </Badge>
                             <span className="text-xs font-mono text-muted-foreground">
@@ -569,7 +640,10 @@ export function AdminAllUsersTab() {
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex flex-col items-center gap-0.5">
-                            <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
+                            <Badge
+                              variant="outline"
+                              className="bg-red-500/10 text-red-500 border-red-500/20"
+                            >
                               {user.rejected_count}
                             </Badge>
                             <span className="text-xs font-mono text-muted-foreground">
@@ -578,7 +652,10 @@ export function AdminAllUsersTab() {
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-500/10 text-amber-500 border-amber-500/20"
+                          >
                             {user.pending_count}
                           </Badge>
                         </TableCell>
@@ -586,20 +663,28 @@ export function AdminAllUsersTab() {
 
                       {/* Expanded responses row */}
                       {isExpanded && (
-                        <TableRow key={`${user.id}-responses`} className="bg-muted/30">
+                        <TableRow
+                          key={`${user.id}-responses`}
+                          className="bg-muted/30"
+                        >
                           <TableCell colSpan={10} className="p-0">
                             <div className="p-4 border-t border-b border-muted/30">
                               {isLoadingUser ? (
                                 <div className="flex items-center justify-center py-4">
                                   <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-                                  <span className="text-muted-foreground">Loading responses...</span>
+                                  <span className="text-muted-foreground">
+                                    Loading responses...
+                                  </span>
                                 </div>
                               ) : responses.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-4">No responses found</p>
+                                <p className="text-center text-muted-foreground py-4">
+                                  No responses found
+                                </p>
                               ) : (
                                 <div className="space-y-2">
                                   <h4 className="font-semibold text-sm text-foreground mb-3">
-                                    Responses by {user.first_name} {user.last_name} ({responses.length})
+                                    Responses by {user.first_name}{' '}
+                                    {user.last_name} ({responses.length})
                                   </h4>
                                   <div className="grid gap-2">
                                     {responses.map((response) => (
@@ -613,11 +698,15 @@ export function AdminAllUsersTab() {
                                           </p>
                                           <div className="flex items-center gap-2 mt-1">
                                             <span className="text-xs text-muted-foreground">
-                                              {new Date(response.created_at).toLocaleString()}
+                                              {new Date(
+                                                response.created_at
+                                              ).toLocaleString()}
                                             </span>
                                             {response.duration_seconds && (
                                               <span className="text-xs font-mono text-muted-foreground">
-                                                {formatDuration(response.duration_seconds)}
+                                                {formatDuration(
+                                                  response.duration_seconds
+                                                )}
                                               </span>
                                             )}
                                           </div>
@@ -631,7 +720,10 @@ export function AdminAllUsersTab() {
                                               className="h-7 gap-1.5"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                window.open(response.audio_file_url!, "_blank");
+                                                window.open(
+                                                  response.audio_file_url!,
+                                                  '_blank'
+                                                );
                                               }}
                                             >
                                               <Play className="h-3 w-3" />
@@ -659,7 +751,7 @@ export function AdminAllUsersTab() {
                       <p className="text-muted-foreground">
                         {searchQuery
                           ? `No users match "${searchQuery}"`
-                          : "No users found"}
+                          : 'No users found'}
                       </p>
                     </TableCell>
                   </TableRow>
@@ -695,20 +787,26 @@ export function AdminAllUsersTab() {
 
           <div className="flex items-center gap-1">
             {getPageNumbers().map((page, index) =>
-              page === "ellipsis" ? (
-                <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground">
+              page === 'ellipsis' ? (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="px-2 text-muted-foreground"
+                >
                   …
                 </span>
               ) : (
                 <Button
                   key={page}
-                  variant={page === currentPage ? "default" : "outline"}
+                  variant={page === currentPage ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 p-0 ${page === currentPage ? "bg-primary text-primary-foreground" : ""
-                    }`}
+                  className={`w-8 h-8 p-0 ${
+                    page === currentPage
+                      ? 'bg-primary text-primary-foreground'
+                      : ''
+                  }`}
                   aria-label={`Page ${page}`}
-                  aria-current={page === currentPage ? "page" : undefined}
+                  aria-current={page === currentPage ? 'page' : undefined}
                 >
                   {page}
                 </Button>

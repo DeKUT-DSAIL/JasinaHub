@@ -41,9 +41,21 @@
 
     --glass-bg: 220 50% 98% / 0.8;
     --glass-border: 220 40% 90% / 0.3;
-    --gradient-primary: linear-gradient(135deg, hsl(215 85% 55%), hsl(215 90% 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(220 50% 98% / 0.9), hsl(220 40% 95% / 0.8));
-    --gradient-card: linear-gradient(135deg, hsl(220 50% 98% / 0.7), hsl(220 40% 96% / 0.6));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(215 85% 55%),
+      hsl(215 90% 65%)
+    );
+    --gradient-secondary: linear-gradient(
+      135deg,
+      hsl(220 50% 98% / 0.9),
+      hsl(220 40% 95% / 0.8)
+    );
+    --gradient-card: linear-gradient(
+      135deg,
+      hsl(220 50% 98% / 0.7),
+      hsl(220 40% 96% / 0.6)
+    );
     --shadow-glass: 0 8px 32px hsl(215 85% 55% / 0.1);
     --shadow-soft: 0 4px 20px hsl(220 25% 80% / 0.3);
 
@@ -84,9 +96,21 @@
     --ring: 215 85% 65%;
     --glass-bg: 220 25% 12% / 0.8;
     --glass-border: 220 30% 25% / 0.3;
-    --gradient-primary: linear-gradient(135deg, hsl(215 85% 65%), hsl(215 90% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(220 25% 12% / 0.9), hsl(220 20% 15% / 0.8));
-    --gradient-card: linear-gradient(135deg, hsl(220 25% 12% / 0.7), hsl(220 20% 16% / 0.6));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(215 85% 65%),
+      hsl(215 90% 75%)
+    );
+    --gradient-secondary: linear-gradient(
+      135deg,
+      hsl(220 25% 12% / 0.9),
+      hsl(220 20% 15% / 0.8)
+    );
+    --gradient-card: linear-gradient(
+      135deg,
+      hsl(220 25% 12% / 0.7),
+      hsl(220 20% 16% / 0.6)
+    );
     --shadow-glass: 0 8px 32px hsl(215 85% 65% / 0.1);
     --shadow-soft: 0 4px 20px hsl(220 20% 10% / 0.3);
     --sidebar-background: 220 25% 10%;
@@ -109,7 +133,11 @@
     @apply bg-background text-foreground font-sans;
     font-feature-settings: 'cv11', 'ss01';
     font-variation-settings: 'opsz' 32;
-    background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--secondary)));
+    background: linear-gradient(
+      135deg,
+      hsl(var(--background)),
+      hsl(var(--secondary))
+    );
     min-height: 100vh;
   }
 
@@ -172,7 +200,6 @@
   }
 
   @keyframes pulse {
-
     0%,
     100% {
       opacity: 1;
@@ -198,7 +225,6 @@
 
   /* Reduced motion support - comprehensive */
   @media (prefers-reduced-motion: reduce) {
-
     *,
     *::before,
     *::after {
@@ -302,14 +328,13 @@
   select:focus-visible,
   textarea:focus-visible,
   [tabindex]:focus-visible,
-  [role="button"]:focus-visible {
+  [role='button']:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
     outline-offset: 2px;
   }
 
   /* High contrast focus for better visibility */
   @media (prefers-contrast: more) {
-
     button:focus-visible,
     a:focus-visible,
     input:focus-visible,

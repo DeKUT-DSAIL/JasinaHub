@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import {
   Mic,
   Clock,
@@ -13,8 +13,8 @@ import {
   BookOpen,
   ChevronRight,
   Sparkles,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -25,7 +25,7 @@ interface Category {
 
 interface AccessRequest {
   category_id: string;
-  status: "pending" | "approved" | "rejected";
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 interface CategoryBrowserProps {
@@ -37,33 +37,33 @@ interface CategoryBrowserProps {
 
 const statusConfig = {
   approved: {
-    label: "Access Granted",
+    label: 'Access Granted',
     badgeClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     Icon: CheckCircle2,
   },
   pending: {
-    label: "Pending Approval",
+    label: 'Pending Approval',
     badgeClass:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     Icon: Clock,
   },
   rejected: {
-    label: "Not Approved",
+    label: 'Not Approved',
     badgeClass:
-      "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+      'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
     Icon: AlertCircle,
   },
 } as const;
 
 // Soft gradient accents per card index
 const cardAccents = [
-  "from-violet-500/5 to-purple-500/5 border-violet-500/10",
-  "from-sky-500/5 to-blue-500/5 border-sky-500/10",
-  "from-rose-500/5 to-pink-500/5 border-rose-500/10",
-  "from-amber-500/5 to-orange-500/5 border-amber-500/10",
-  "from-emerald-500/5 to-teal-500/5 border-emerald-500/10",
-  "from-indigo-500/5 to-cyan-500/5 border-indigo-500/10",
+  'from-violet-500/5 to-purple-500/5 border-violet-500/10',
+  'from-sky-500/5 to-blue-500/5 border-sky-500/10',
+  'from-rose-500/5 to-pink-500/5 border-rose-500/10',
+  'from-amber-500/5 to-orange-500/5 border-amber-500/10',
+  'from-emerald-500/5 to-teal-500/5 border-emerald-500/10',
+  'from-indigo-500/5 to-cyan-500/5 border-indigo-500/10',
 ];
 
 export function CategoryBrowser({
@@ -78,14 +78,14 @@ export function CategoryBrowser({
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const [catRes, qCountRes, reqRes] = await Promise.all([
-      supabase.from("categories").select("id, name, description").order("name"),
-      supabase.from("questions").select("id, category_id"),
+      supabase.from('categories').select('id, name, description').order('name'),
+      supabase.from('questions').select('id, category_id'),
       supabase
-        .from("category_access_requests" as any)
-        .select("category_id, status")
-        .eq("user_id", userId),
+        .from('category_access_requests' as any)
+        .select('category_id, status')
+        .eq('user_id', userId),
     ]);
 
     // Attach question counts
@@ -100,15 +100,13 @@ export function CategoryBrowser({
         question_count: qCounts[c.id] || 0,
       }))
     );
-    setRequests(
-      (reqRes.data || []) as AccessRequest[]
-    );
+    setRequests((reqRes.data || []) as AccessRequest[]);
     setLoading(false);
-  };
+  }, [userId]);
 
   useEffect(() => {
     loadData();
-  }, [userId]);
+  }, [loadData]);
 
   const getRequestForCategory = (categoryId: string) =>
     requests.find((r) => r.category_id === categoryId);
@@ -116,10 +114,10 @@ export function CategoryBrowser({
   const handleRequestAccess = async (categoryId: string) => {
     if (!isVerified) {
       toast({
-        title: "Account Not Verified",
+        title: 'Account Not Verified',
         description:
-          "Your account must be verified by an admin before you can request category access.",
-        variant: "destructive",
+          'Your account must be verified by an admin before you can request category access.',
+        variant: 'destructive',
       });
       return;
     }
@@ -127,32 +125,33 @@ export function CategoryBrowser({
     setRequesting(categoryId);
     try {
       const { error } = await supabase
-        .from("category_access_requests" as any)
+        .from('category_access_requests' as any)
         .insert({ user_id: userId, category_id: categoryId } as any);
 
       if (error) {
-        if (error.code === "23505") {
+        if (error.code === '23505') {
           toast({
-            title: "Already Requested",
-            description: "You have already submitted a request for this category.",
+            title: 'Already Requested',
+            description:
+              'You have already submitted a request for this category.',
           });
         } else {
           throw error;
         }
       } else {
         toast({
-          title: "Request Submitted",
+          title: 'Request Submitted',
           description:
-            "Your access request has been sent. The admin will review it shortly.",
+            'Your access request has been sent. The admin will review it shortly.',
         });
         await loadData();
       }
     } catch (err) {
       console.error(err);
       toast({
-        title: "Error",
-        description: "Failed to submit request. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to submit request. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setRequesting(null);
@@ -163,10 +162,7 @@ export function CategoryBrowser({
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-28 rounded-2xl bg-muted/50 animate-pulse"
-          />
+          <div key={i} className="h-28 rounded-2xl bg-muted/50 animate-pulse" />
         ))}
       </div>
     );
@@ -190,7 +186,7 @@ export function CategoryBrowser({
           Available Categories
         </h2>
         <span className="text-xs text-muted-foreground font-medium">
-          {categories.length} categor{categories.length === 1 ? "y" : "ies"}
+          {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}
         </span>
       </div>
 
@@ -198,20 +194,20 @@ export function CategoryBrowser({
         {categories.map((category, idx) => {
           const request = getRequestForCategory(category.id);
           const accentClass = cardAccents[idx % cardAccents.length];
-          const isApproved = isAdmin || request?.status === "approved";
-          const isPending = request?.status === "pending";
-          const isRejected = request?.status === "rejected";
+          const isApproved = isAdmin || request?.status === 'approved';
+          const isPending = request?.status === 'pending';
+          const isRejected = request?.status === 'rejected';
           const isLoadingThis = requesting === category.id;
 
           return (
             <div
               key={category.id}
               className={cn(
-                "relative group flex flex-col gap-3 p-5 rounded-2xl border bg-gradient-to-br transition-all duration-300",
+                'relative group flex flex-col gap-3 p-5 rounded-2xl border bg-gradient-to-br transition-all duration-300',
                 accentClass,
                 isApproved
-                  ? "shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                  : "hover:shadow-sm"
+                  ? 'shadow-md hover:shadow-lg hover:-translate-y-0.5'
+                  : 'hover:shadow-sm'
               )}
             >
               {/* Status badge */}
@@ -220,7 +216,7 @@ export function CategoryBrowser({
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-[10px] uppercase font-bold gap-1 px-2 py-0.5",
+                      'text-[10px] uppercase font-bold gap-1 px-2 py-0.5',
                       statusConfig[request.status].badgeClass
                     )}
                   >
@@ -250,7 +246,7 @@ export function CategoryBrowser({
                 <span className="flex items-center gap-1">
                   <Mic className="w-3.5 h-3.5" />
                   {category.question_count} question
-                  {category.question_count !== 1 ? "s" : ""}
+                  {category.question_count !== 1 ? 's' : ''}
                 </span>
               </div>
 
@@ -298,7 +294,7 @@ export function CategoryBrowser({
                     ) : (
                       <Lock className="w-3.5 h-3.5" />
                     )}
-                    {isVerified ? "Request Access" : "Verify Account First"}
+                    {isVerified ? 'Request Access' : 'Verify Account First'}
                   </Button>
                 )}
               </div>

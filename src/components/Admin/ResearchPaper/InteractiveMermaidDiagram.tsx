@@ -1,39 +1,57 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Download, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  Maximize2,
+  Minimize2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Download,
+  ChevronDown,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from "@/hooks/use-toast";
+} from '@/components/ui/dropdown-menu';
+import { toast } from '@/hooks/use-toast';
 
 // Lazy-load mermaid (~1MB) only when a diagram actually renders.
-let interactiveMermaidPromise: Promise<typeof import("mermaid").default> | null = null;
+let interactiveMermaidPromise: Promise<
+  typeof import('mermaid').default
+> | null = null;
 
 function getInteractiveMermaid() {
   if (!interactiveMermaidPromise) {
-    interactiveMermaidPromise = import("mermaid").then(({ default: mermaid }) => {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "default",
-        securityLevel: "loose",
-        fontFamily: '"Source Serif 4", Georgia, serif',
-        fontSize: 16,
-      });
-      return mermaid;
-    });
+    interactiveMermaidPromise = import('mermaid').then(
+      ({ default: mermaid }) => {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose',
+          fontFamily: '"Source Serif 4", Georgia, serif',
+          fontSize: 16,
+        });
+        return mermaid;
+      }
+    );
   }
   return interactiveMermaidPromise;
 }
 
 function createMermaidId(prefix: string, title: string) {
-  const safeTitle = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "diagram";
+  const safeTitle =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'diagram';
 
   return `${prefix}-${safeTitle}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -43,7 +61,10 @@ interface InteractiveMermaidDiagramProps {
   title: string;
 }
 
-export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDiagramProps) {
+export function InteractiveMermaidDiagram({
+  chart,
+  title,
+}: InteractiveMermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const modalContainerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,27 +73,30 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
   const [zoom, setZoom] = useState(1);
   const [modalZoom, setModalZoom] = useState(1);
 
-  const renderDiagram = useCallback(async (container: HTMLDivElement, prefix: string) => {
-    try {
-      const mermaid = await getInteractiveMermaid();
-      const id = createMermaidId(prefix, title);
-      const { svg } = await mermaid.render(id, chart);
-      container.innerHTML = svg;
-      setError(null);
-    } catch (e) {
-      console.error("Mermaid render error:", e);
-      setError(String(e));
-    }
-  }, [chart, title]);
+  const renderDiagram = useCallback(
+    async (container: HTMLDivElement, prefix: string) => {
+      try {
+        const mermaid = await getInteractiveMermaid();
+        const id = createMermaidId(prefix, title);
+        const { svg } = await mermaid.render(id, chart);
+        container.innerHTML = svg;
+        setError(null);
+      } catch (e) {
+        console.error('Mermaid render error:', e);
+        setError(String(e));
+      }
+    },
+    [chart, title]
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
-    renderDiagram(containerRef.current, "interactive-mermaid-inline");
+    renderDiagram(containerRef.current, 'interactive-mermaid-inline');
   }, [renderDiagram]);
 
   useEffect(() => {
     if (!isFullscreen || !modalContainerRef.current) return;
-    renderDiagram(modalContainerRef.current, "interactive-mermaid-modal");
+    renderDiagram(modalContainerRef.current, 'interactive-mermaid-modal');
   }, [isFullscreen, renderDiagram]);
 
   const handleZoomIn = useCallback((isModal: boolean) => {
@@ -103,56 +127,62 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
     return (
       title
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "diagram"
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'diagram'
     );
   }, [title]);
 
   const buildCleanSvg = useCallback((svgEl: SVGSVGElement) => {
     const cloned = svgEl.cloneNode(true) as SVGSVGElement;
-    cloned.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    cloned.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    cloned.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    cloned.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
 
     const bbox = svgEl.getBoundingClientRect();
     const width = Math.max(1, Math.ceil(bbox.width));
     const height = Math.max(1, Math.ceil(bbox.height));
-    cloned.setAttribute("width", String(width));
-    cloned.setAttribute("height", String(height));
-    if (!cloned.getAttribute("viewBox")) {
-      cloned.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    cloned.setAttribute('width', String(width));
+    cloned.setAttribute('height', String(height));
+    if (!cloned.getAttribute('viewBox')) {
+      cloned.setAttribute('viewBox', `0 0 ${width} ${height}`);
     }
 
     // Replace foreignObject elements with native SVG <text> nodes to avoid
     // tainting the canvas during rasterisation.
-    const svgNS = "http://www.w3.org/2000/svg";
-    const liveForeignObjects = Array.from(svgEl.querySelectorAll("foreignObject"));
-    const clonedForeignObjects = Array.from(cloned.querySelectorAll("foreignObject"));
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const liveForeignObjects = Array.from(
+      svgEl.querySelectorAll('foreignObject')
+    );
+    const clonedForeignObjects = Array.from(
+      cloned.querySelectorAll('foreignObject')
+    );
 
     clonedForeignObjects.forEach((cfo, idx) => {
       const live = liveForeignObjects[idx];
-      const sampleEl = (live?.querySelector("div, span, p") as HTMLElement | null) ?? null;
+      const sampleEl =
+        (live?.querySelector('div, span, p') as HTMLElement | null) ?? null;
       const computed = sampleEl ? window.getComputedStyle(sampleEl) : null;
 
-      const fontFamily = computed?.fontFamily || '"Source Serif 4", Georgia, serif';
-      const fontSize = computed?.fontSize || "14px";
-      const fontWeight = computed?.fontWeight || "normal";
-      const color = computed?.color || "#1f2937";
+      const fontFamily =
+        computed?.fontFamily || '"Source Serif 4", Georgia, serif';
+      const fontSize = computed?.fontSize || '14px';
+      const fontWeight = computed?.fontWeight || 'normal';
+      const color = computed?.color || '#1f2937';
 
-      const text = (live?.textContent || cfo.textContent || "").trim();
-      const foWidth = parseFloat(cfo.getAttribute("width") || "0") || 0;
-      const foHeight = parseFloat(cfo.getAttribute("height") || "0") || 0;
-      const foX = parseFloat(cfo.getAttribute("x") || "0") || 0;
-      const foY = parseFloat(cfo.getAttribute("y") || "0") || 0;
+      const text = (live?.textContent || cfo.textContent || '').trim();
+      const foWidth = parseFloat(cfo.getAttribute('width') || '0') || 0;
+      const foHeight = parseFloat(cfo.getAttribute('height') || '0') || 0;
+      const foX = parseFloat(cfo.getAttribute('x') || '0') || 0;
+      const foY = parseFloat(cfo.getAttribute('y') || '0') || 0;
 
-      const textEl = document.createElementNS(svgNS, "text");
-      textEl.setAttribute("x", String(foX + foWidth / 2));
-      textEl.setAttribute("y", String(foY + foHeight / 2));
-      textEl.setAttribute("text-anchor", "middle");
-      textEl.setAttribute("dominant-baseline", "middle");
-      textEl.setAttribute("font-family", fontFamily);
-      textEl.setAttribute("font-size", fontSize);
-      textEl.setAttribute("font-weight", fontWeight);
-      textEl.setAttribute("fill", color);
+      const textEl = document.createElementNS(svgNS, 'text');
+      textEl.setAttribute('x', String(foX + foWidth / 2));
+      textEl.setAttribute('y', String(foY + foHeight / 2));
+      textEl.setAttribute('text-anchor', 'middle');
+      textEl.setAttribute('dominant-baseline', 'middle');
+      textEl.setAttribute('font-family', fontFamily);
+      textEl.setAttribute('font-size', fontSize);
+      textEl.setAttribute('font-weight', fontWeight);
+      textEl.setAttribute('fill', color);
 
       // Wrap long lines naively by splitting on existing line breaks
       const lines = text.split(/\n+/).filter(Boolean);
@@ -160,12 +190,13 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
         textEl.textContent = text;
       } else {
         const lineHeight = parseFloat(fontSize) * 1.2 || 16;
-        const startY = foY + foHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
-        textEl.setAttribute("y", String(startY));
+        const startY =
+          foY + foHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
+        textEl.setAttribute('y', String(startY));
         lines.forEach((line, i) => {
-          const tspan = document.createElementNS(svgNS, "tspan");
-          tspan.setAttribute("x", String(foX + foWidth / 2));
-          if (i > 0) tspan.setAttribute("dy", String(lineHeight));
+          const tspan = document.createElementNS(svgNS, 'tspan');
+          tspan.setAttribute('x', String(foX + foWidth / 2));
+          if (i > 0) tspan.setAttribute('dy', String(lineHeight));
           tspan.textContent = line;
           textEl.appendChild(tspan);
         });
@@ -178,87 +209,118 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
     return { serialized, width, height };
   }, []);
 
-  const handleDownloadSvg = useCallback((sourceContainer: HTMLDivElement | null) => {
-    if (!sourceContainer) return;
-    const svgEl = sourceContainer.querySelector("svg") as SVGSVGElement | null;
-    if (!svgEl) {
-      toast({ title: "No diagram available to download", variant: "destructive" });
-      return;
-    }
-    try {
-      const { serialized } = buildCleanSvg(svgEl);
-      const blob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${getSafeName()}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: "Diagram downloaded as SVG" });
-    } catch (err) {
-      console.error("Failed to export diagram as SVG:", err);
-      toast({ title: "Failed to export diagram as SVG", variant: "destructive" });
-    }
-  }, [buildCleanSvg, getSafeName]);
-
-  const handleDownloadPng = useCallback(async (sourceContainer: HTMLDivElement | null) => {
-    if (!sourceContainer) return;
-    const svgEl = sourceContainer.querySelector("svg") as SVGSVGElement | null;
-    if (!svgEl) {
-      toast({ title: "No diagram available to download", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const { serialized, width, height } = buildCleanSvg(svgEl);
-
-      // Use a base64 data URL — avoids blob-URL taint quirks in some browsers
-      const encoded = window.btoa(unescape(encodeURIComponent(serialized)));
-      const dataUrl = `data:image/svg+xml;base64,${encoded}`;
-
-      const img = new Image();
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Failed to load SVG for export"));
-        img.src = dataUrl;
-      });
-
-      const scale = 2;
-      const canvas = document.createElement("canvas");
-      canvas.width = width * scale;
-      canvas.height = height * scale;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        toast({ title: "Canvas not supported in this browser", variant: "destructive" });
+  const handleDownloadSvg = useCallback(
+    (sourceContainer: HTMLDivElement | null) => {
+      if (!sourceContainer) return;
+      const svgEl = sourceContainer.querySelector(
+        'svg'
+      ) as SVGSVGElement | null;
+      if (!svgEl) {
+        toast({
+          title: 'No diagram available to download',
+          variant: 'destructive',
+        });
         return;
       }
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast({ title: "Failed to render PNG. Try SVG instead.", variant: "destructive" });
-          return;
-        }
-        const downloadUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = downloadUrl;
-        a.download = `${getSafeName()}.png`;
+      try {
+        const { serialized } = buildCleanSvg(svgEl);
+        const blob = new Blob([serialized], {
+          type: 'image/svg+xml;charset=utf-8',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${getSafeName()}.svg`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(downloadUrl);
-        toast({ title: "Diagram downloaded as PNG" });
-      }, "image/png");
-    } catch (err) {
-      console.error("Failed to export diagram as PNG:", err);
-      toast({ title: "PNG export failed. Try downloading as SVG instead.", variant: "destructive" });
-    }
-  }, [buildCleanSvg, getSafeName]);
+        URL.revokeObjectURL(url);
+        toast({ title: 'Diagram downloaded as SVG' });
+      } catch (err) {
+        console.error('Failed to export diagram as SVG:', err);
+        toast({
+          title: 'Failed to export diagram as SVG',
+          variant: 'destructive',
+        });
+      }
+    },
+    [buildCleanSvg, getSafeName]
+  );
+
+  const handleDownloadPng = useCallback(
+    async (sourceContainer: HTMLDivElement | null) => {
+      if (!sourceContainer) return;
+      const svgEl = sourceContainer.querySelector(
+        'svg'
+      ) as SVGSVGElement | null;
+      if (!svgEl) {
+        toast({
+          title: 'No diagram available to download',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      try {
+        const { serialized, width, height } = buildCleanSvg(svgEl);
+
+        // Use a base64 data URL — avoids blob-URL taint quirks in some browsers
+        const encoded = window.btoa(unescape(encodeURIComponent(serialized)));
+        const dataUrl = `data:image/svg+xml;base64,${encoded}`;
+
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () =>
+            reject(new Error('Failed to load SVG for export'));
+          img.src = dataUrl;
+        });
+
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          toast({
+            title: 'Canvas not supported in this browser',
+            variant: 'destructive',
+          });
+          return;
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            toast({
+              title: 'Failed to render PNG. Try SVG instead.',
+              variant: 'destructive',
+            });
+            return;
+          }
+          const downloadUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = `${getSafeName()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(downloadUrl);
+          toast({ title: 'Diagram downloaded as PNG' });
+        }, 'image/png');
+      } catch (err) {
+        console.error('Failed to export diagram as PNG:', err);
+        toast({
+          title: 'PNG export failed. Try downloading as SVG instead.',
+          variant: 'destructive',
+        });
+      }
+    },
+    [buildCleanSvg, getSafeName]
+  );
 
   const ZoomControls = ({ isModal = false }: { isModal?: boolean }) => {
     const currentZoom = isModal ? modalZoom : zoom;
@@ -317,7 +379,7 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
       >
         <div
           className={`absolute top-2 right-2 z-10 flex items-center gap-2 transition-opacity duration-200 ${
-            isHovered ? "opacity-100" : "opacity-0"
+            isHovered ? 'opacity-100' : 'opacity-0'
           }`}
         >
           <ZoomControls />
@@ -335,11 +397,18 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => handleDownloadPng(containerRef.current)}>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuItem
+                onClick={() => handleDownloadPng(containerRef.current)}
+              >
                 Download as PNG
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownloadSvg(containerRef.current)}>
+              <DropdownMenuItem
+                onClick={() => handleDownloadSvg(containerRef.current)}
+              >
                 Download as SVG
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -363,12 +432,15 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
         ) : (
           <div
             className="overflow-auto cursor-grab active:cursor-grabbing bg-background rounded-lg border border-border p-4"
-            style={{ maxHeight: "60vh" }}
+            style={{ maxHeight: '60vh' }}
           >
             <div
               ref={containerRef}
               className="flex justify-center [&_svg]:max-w-none transition-transform duration-200"
-              style={{ transform: `scale(${zoom})`, transformOrigin: "center top" }}
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'center top',
+              }}
             />
           </div>
         )}
@@ -398,10 +470,14 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleDownloadPng(modalContainerRef.current)}>
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadPng(modalContainerRef.current)}
+                  >
                     Download as PNG
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDownloadSvg(modalContainerRef.current)}>
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadSvg(modalContainerRef.current)}
+                  >
                     Download as SVG
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -419,12 +495,17 @@ export function InteractiveMermaidDiagram({ chart, title }: InteractiveMermaidDi
           </div>
           <div className="flex-1 overflow-auto p-6">
             {error ? (
-              <pre className="text-destructive text-xs overflow-auto">{error}</pre>
+              <pre className="text-destructive text-xs overflow-auto">
+                {error}
+              </pre>
             ) : (
               <div
                 ref={modalContainerRef}
                 className="flex justify-center min-w-max [&_svg]:max-w-none transition-transform duration-200"
-                style={{ transform: `scale(${modalZoom})`, transformOrigin: "center top" }}
+                style={{
+                  transform: `scale(${modalZoom})`,
+                  transformOrigin: 'center top',
+                }}
               />
             )}
           </div>

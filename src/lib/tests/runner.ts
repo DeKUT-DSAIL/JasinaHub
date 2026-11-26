@@ -1,4 +1,4 @@
-import { TestSuite, TestResult } from "./types";
+import { TestSuite, TestResult } from './types';
 
 export interface RunOptions {
   includeDestructive?: boolean;
@@ -6,7 +6,10 @@ export interface RunOptions {
   onTestStart?: (suiteId: string, testId: string) => void;
 }
 
-export async function runSuites(suites: TestSuite[], opts: RunOptions = {}): Promise<TestResult[]> {
+export async function runSuites(
+  suites: TestSuite[],
+  opts: RunOptions = {}
+): Promise<TestResult[]> {
   const results: TestResult[] = [];
   for (const suite of suites) {
     for (const test of suite.tests) {
@@ -15,9 +18,9 @@ export async function runSuites(suites: TestSuite[], opts: RunOptions = {}): Pro
           testId: test.id,
           suiteId: suite.id,
           name: test.name,
-          status: "skipped",
+          status: 'skipped',
           durationMs: 0,
-          error: "Skipped (destructive test disabled)",
+          error: 'Skipped (destructive test disabled)',
         };
         results.push(r);
         opts.onResult?.(r);
@@ -31,9 +34,9 @@ export async function runSuites(suites: TestSuite[], opts: RunOptions = {}): Pro
           testId: test.id,
           suiteId: suite.id,
           name: test.name,
-          status: "passed",
+          status: 'passed',
           durationMs: Math.round(performance.now() - start),
-          details: out && typeof out === "object" ? out.details : undefined,
+          details: out && typeof out === 'object' ? out.details : undefined,
         };
         results.push(r);
         opts.onResult?.(r);
@@ -43,9 +46,9 @@ export async function runSuites(suites: TestSuite[], opts: RunOptions = {}): Pro
             testId: test.id,
             suiteId: suite.id,
             name: test.name,
-            status: "skipped",
+            status: 'skipped',
             durationMs: Math.round(performance.now() - start),
-            error: err?.message ?? "Skipped",
+            error: err?.message ?? 'Skipped',
           };
           results.push(r);
           opts.onResult?.(r);
@@ -55,7 +58,7 @@ export async function runSuites(suites: TestSuite[], opts: RunOptions = {}): Pro
           testId: test.id,
           suiteId: suite.id,
           name: test.name,
-          status: "failed",
+          status: 'failed',
           durationMs: Math.round(performance.now() - start),
           error: err?.message ?? String(err),
           details: err?.stack,

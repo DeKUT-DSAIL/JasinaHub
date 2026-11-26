@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface AudioWaveformProps {
   audioStream: MediaStream | null;
@@ -7,11 +7,11 @@ interface AudioWaveformProps {
   barGap?: number; // Added for styling control
 }
 
-export const AudioWaveform = ({ 
-  audioStream, 
-  isActive, 
-  color = "#2563eb",
-  barGap = 2 
+export const AudioWaveform = ({
+  audioStream,
+  isActive,
+  color = '#2563eb',
+  barGap = 2,
 }: AudioWaveformProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,7 +23,10 @@ export const AudioWaveform = ({
   useEffect(() => {
     // 1. Cleanup previous context to prevent "max AudioContext" errors
     return () => {
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== 'closed'
+      ) {
         audioContextRef.current.close();
       }
       cancelAnimationFrame(animationFrameRef.current!);
@@ -35,21 +38,21 @@ export const AudioWaveform = ({
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // 2. Handle Resize for High DPI (Retina) Displays
     const handleResize = () => {
       const dpr = window.devicePixelRatio || 1;
       const rect = container.getBoundingClientRect();
-      
+
       // Set actual size in memory (scaled to account for extra pixel density)
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      
+
       // Normalize coordinate system to use css pixels
       ctx.scale(dpr, dpr);
-      
+
       // Force CSS size to match parent
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
@@ -66,8 +69,13 @@ export const AudioWaveform = ({
     const setupAudio = () => {
       if (!audioStream || !isActive) return;
 
-      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (
+        !audioContextRef.current ||
+        audioContextRef.current.state === 'closed'
+      ) {
+        audioContextRef.current = new (
+          window.AudioContext || (window as any).webkitAudioContext
+        )();
       }
 
       const audioContext = audioContextRef.current;
@@ -96,30 +104,30 @@ export const AudioWaveform = ({
       // Gradient Setup
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
       gradient.addColorStop(0, `${color}33`); // Fade top (hex alpha 20%)
-      gradient.addColorStop(0.5, color);       // Solid center
-      gradient.addColorStop(1, `${color}33`);  // Fade bottom
+      gradient.addColorStop(0.5, color); // Solid center
+      gradient.addColorStop(1, `${color}33`); // Fade bottom
 
       ctx.fillStyle = gradient;
 
       // Draw Idle Line
       if (!isActive || !analyserRef.current) {
         ctx.beginPath();
-        ctx.roundRect(0, (height / 2) - 1, width, 2, 2);
-        ctx.fillStyle = "rgba(156, 163, 175, 0.2)"; // Slate-400 low opacity
+        ctx.roundRect(0, height / 2 - 1, width, 2, 2);
+        ctx.fillStyle = 'rgba(156, 163, 175, 0.2)'; // Slate-400 low opacity
         ctx.fill();
         return;
       }
 
       // Draw Active Bars
       animationFrameRef.current = requestAnimationFrame(draw);
-      
+
       const bufferLength = analyserRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       analyserRef.current.getByteFrequencyData(dataArray);
 
       // Determine bar width based on container width to prevent overflow
       // We only use the lower 70% of frequency bins because high freqs (air) are often empty in speech
-      const usableBins = Math.floor(bufferLength * 0.7); 
+      const usableBins = Math.floor(bufferLength * 0.7);
       const totalGapSpace = (usableBins - 1) * barGap;
       const availableSpace = width - totalGapSpace;
       const barWidth = availableSpace / usableBins;
@@ -130,8 +138,8 @@ export const AudioWaveform = ({
         // Normalize value (0-255) to canvas height
         // Multiplier 0.8 keeps bars from hitting the very top/bottom edge
         const value = dataArray[i];
-        const barHeight = Math.max(2, (value / 255) * height * 0.8); 
-        
+        const barHeight = Math.max(2, (value / 255) * height * 0.8);
+
         const y = (height - barHeight) / 2;
 
         ctx.beginPath();
@@ -147,7 +155,8 @@ export const AudioWaveform = ({
 
     return () => {
       resizeObserver.disconnect();
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
       if (sourceRef.current) sourceRef.current.disconnect();
       if (analyserRef.current) analyserRef.current.disconnect();
     };

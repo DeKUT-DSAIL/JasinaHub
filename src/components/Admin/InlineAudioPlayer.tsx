@@ -1,13 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Pause, Volume2 } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Play, Pause, Volume2 } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 
 interface InlineAudioPlayerProps {
   src: string;
   durationSeconds?: number | null;
 }
 
-export function InlineAudioPlayer({ src, durationSeconds }: InlineAudioPlayerProps) {
+export function InlineAudioPlayer({
+  src,
+  durationSeconds,
+}: InlineAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -17,19 +20,21 @@ export function InlineAudioPlayer({ src, durationSeconds }: InlineAudioPlayerPro
     const audio = new Audio(src);
     audioRef.current = audio;
 
-    audio.addEventListener("loadedmetadata", () => {
+    audio.addEventListener('loadedmetadata', () => {
       if (audio.duration && isFinite(audio.duration)) {
         setDuration(audio.duration);
       }
     });
-    audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
-    audio.addEventListener("ended", () => setPlaying(false));
+    audio.addEventListener('timeupdate', () =>
+      setCurrentTime(audio.currentTime)
+    );
+    audio.addEventListener('ended', () => setPlaying(false));
 
     return () => {
       audio.pause();
-      audio.removeEventListener("loadedmetadata", () => {});
-      audio.removeEventListener("timeupdate", () => {});
-      audio.removeEventListener("ended", () => {});
+      audio.removeEventListener('loadedmetadata', () => {});
+      audio.removeEventListener('timeupdate', () => {});
+      audio.removeEventListener('ended', () => {});
     };
   }, [src]);
 
@@ -54,7 +59,7 @@ export function InlineAudioPlayer({ src, durationSeconds }: InlineAudioPlayerPro
   const fmt = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
-    return `${m}:${String(sec).padStart(2, "0")}`;
+    return `${m}:${String(sec).padStart(2, '0')}`;
   };
 
   return (
@@ -63,7 +68,11 @@ export function InlineAudioPlayer({ src, durationSeconds }: InlineAudioPlayerPro
         onClick={togglePlay}
         className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors shrink-0"
       >
-        {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+        {playing ? (
+          <Pause className="w-3.5 h-3.5" />
+        ) : (
+          <Play className="w-3.5 h-3.5 ml-0.5" />
+        )}
       </button>
       <span className="text-xs text-muted-foreground w-10 text-right tabular-nums shrink-0">
         {fmt(currentTime)}

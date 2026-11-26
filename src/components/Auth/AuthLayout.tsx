@@ -1,5 +1,5 @@
-import { ReactNode, useState } from "react";
-import { Mic, Shield, Cloud, Heart } from "lucide-react";
+import { ReactNode, useState } from 'react';
+import { Mic, Shield, Cloud, Heart } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -27,10 +27,26 @@ const animationStyles = `
 `;
 
 const features = [
-  { icon: Mic, label: "Voice Recording", description: "Share your health experiences" },
-  { icon: Shield, label: "Secure & Private", description: "Your data is protected" },
-  { icon: Cloud, label: "Cloud Synced", description: "Access anywhere, anytime" },
-  { icon: Heart, label: "Health Focused", description: "Contributing to research" },
+  {
+    icon: Mic,
+    label: 'Voice Recording',
+    description: 'Share your health experiences',
+  },
+  {
+    icon: Shield,
+    label: 'Secure & Private',
+    description: 'Your data is protected',
+  },
+  {
+    icon: Cloud,
+    label: 'Cloud Synced',
+    description: 'Access anywhere, anytime',
+  },
+  {
+    icon: Heart,
+    label: 'Health Focused',
+    description: 'Contributing to research',
+  },
 ];
 
 export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
@@ -79,20 +95,14 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   {title}
                 </h1>
-                {subtitle && (
-                  <p className="text-gray-600">
-                    {subtitle}
-                  </p>
-                )}
+                {subtitle && <p className="text-gray-600">{subtitle}</p>}
               </div>
               {children}
             </div>
 
             {/* Trust Badge */}
             <div className="mt-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-              <p className="text-xs text-gray-500">
-                © 2026 DSAIL
-              </p>
+              <p className="text-xs text-gray-500">© 2026 DSAIL</p>
             </div>
           </div>
         </div>
@@ -108,7 +118,8 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
             {/* Tagline */}
             <div className="mb-12 animate-in fade-in slide-in-from-right-4 duration-700">
               <p className="text-blue-100 text-lg leading-relaxed">
-                Join in contributing to health research through voice data collection.
+                Join in contributing to health research through voice data
+                collection.
               </p>
             </div>
 
@@ -123,7 +134,9 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3">
                     <feature.icon className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="font-semibold text-sm mb-1">{feature.label}</h3>
+                  <h3 className="font-semibold text-sm mb-1">
+                    {feature.label}
+                  </h3>
                   <p className="text-blue-200 text-xs">{feature.description}</p>
                 </div>
               ))}

@@ -2,7 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation } from 'react-router-dom';
 
-type ActivityAction = 
+type ActivityAction =
   | 'page_view'
   | 'login'
   | 'logout'
@@ -21,14 +21,37 @@ export const useActivityTracker = () => {
   const lastPageRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
 
+  const logActivity = useCallback(
+    async (action: ActivityAction, details?: ActivityDetails) => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        await supabase.from('user_activity_logs').insert({
+          user_id: user.id,
+          action,
+          details: details || null,
+          page: location.pathname,
+        });
+      } catch (error) {
+        console.error('Failed to log activity:', error);
+      }
+    },
+    [location.pathname]
+  );
+
   // Track page views
   useEffect(() => {
     const trackPageView = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
-      
+
       userIdRef.current = user.id;
-      
+
       // Don't log duplicate page views
       if (lastPageRef.current === location.pathname) return;
       lastPageRef.current = location.pathname;
@@ -37,26 +60,7 @@ export const useActivityTracker = () => {
     };
 
     trackPageView();
-  }, [location.pathname]);
-
-  const logActivity = useCallback(async (
-    action: ActivityAction,
-    details?: ActivityDetails
-  ) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      await supabase.from('user_activity_logs').insert({
-        user_id: user.id,
-        action,
-        details: details || null,
-        page: location.pathname
-      });
-    } catch (error) {
-      console.error('Failed to log activity:', error);
-    }
-  }, [location.pathname]);
+  }, [location.pathname, logActivity]);
 
   return { logActivity };
 };
@@ -68,14 +72,16 @@ export const logUserActivity = async (
   page?: string
 ) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     await supabase.from('user_activity_logs').insert({
       user_id: user.id,
       action,
       details: details || null,
-      page: page || window.location.pathname
+      page: page || window.location.pathname,
     });
   } catch (error) {
     console.error('Failed to log activity:', error);

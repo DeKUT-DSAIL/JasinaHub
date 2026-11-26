@@ -1,23 +1,23 @@
-import { useState, useMemo, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   CheckCircle,
   CheckCircle2,
@@ -33,8 +33,8 @@ import {
   ShieldCheck,
   Clock,
   MoreHorizontal,
-} from "lucide-react";
-import { AdminUsersTableView } from "./AdminUsersTableView";
+} from 'lucide-react';
+import { AdminUsersTableView } from './AdminUsersTableView';
 
 interface UserProfile {
   id: string;
@@ -59,20 +59,34 @@ interface AdminUsersTabProps {
 
 const ITEMS_PER_PAGE = 10;
 
-export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userResponseCounts, userDurations }: AdminUsersTabProps) {
+export function AdminUsersTab({
+  users,
+  onVerifyUser,
+  onApproveTranscriber,
+  userResponseCounts,
+  userDurations,
+}: AdminUsersTabProps) {
   const [showTableView, setShowTableView] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "verified" | "pending">("all");
-  const [filterRole, setFilterRole] = useState<"all" | "recorder" | "transcriber" | "both">("all");
-  const [filterDuration, setFilterDuration] = useState<"all" | "gt_5" | "gt_15">("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'verified' | 'pending'
+  >('all');
+  const [filterRole, setFilterRole] = useState<
+    'all' | 'recorder' | 'transcriber' | 'both'
+  >('all');
+  const [filterDuration, setFilterDuration] = useState<
+    'all' | 'gt_5' | 'gt_15'
+  >('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
   const stats = useMemo(() => {
     return {
       total: users.length,
-      unverified: users.filter(u => !u.verified).length,
-      pendingTranscribers: users.filter(u => u.transcription_guidelines_agreed && !u.transcription_approved).length
+      unverified: users.filter((u) => !u.verified).length,
+      pendingTranscribers: users.filter(
+        (u) => u.transcription_guidelines_agreed && !u.transcription_approved
+      ).length,
     };
   }, [users]);
 
@@ -80,43 +94,57 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const isTranscriber =
-        user.account_type === "transcriber" || user.transcription_guidelines_agreed;
+        user.account_type === 'transcriber' ||
+        user.transcription_guidelines_agreed;
       const duration = userDurations?.[user.id] || 0;
-      const isRecorder = (userResponseCounts?.[user.id] || 0) > 0 || duration > 0;
+      const isRecorder =
+        (userResponseCounts?.[user.id] || 0) > 0 || duration > 0;
 
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
-        searchQuery === "" ||
+        searchQuery === '' ||
         user.first_name.toLowerCase().includes(searchLower) ||
         user.last_name.toLowerCase().includes(searchLower) ||
         user.email.toLowerCase().includes(searchLower) ||
         user.phone_number.includes(searchQuery);
 
       const matchesStatus =
-        filterStatus === "all" ||
-        (filterStatus === "verified" && user.verified) ||
-        (filterStatus === "pending" && !user.verified);
+        filterStatus === 'all' ||
+        (filterStatus === 'verified' && user.verified) ||
+        (filterStatus === 'pending' && !user.verified);
 
       let matchesRole = true;
-      if (filterRole === "transcriber") matchesRole = isTranscriber && !isRecorder;
-      else if (filterRole === "recorder") matchesRole = isRecorder && !isTranscriber;
-      else if (filterRole === "both") matchesRole = isTranscriber && isRecorder;
+      if (filterRole === 'transcriber')
+        matchesRole = isTranscriber && !isRecorder;
+      else if (filterRole === 'recorder')
+        matchesRole = isRecorder && !isTranscriber;
+      else if (filterRole === 'both') matchesRole = isTranscriber && isRecorder;
 
       const matchesDuration =
-        filterDuration === "all" ||
-        (filterDuration === "gt_5" && duration > 300) ||
-        (filterDuration === "gt_15" && duration > 900);
+        filterDuration === 'all' ||
+        (filterDuration === 'gt_5' && duration > 300) ||
+        (filterDuration === 'gt_15' && duration > 900);
 
       return matchesSearch && matchesStatus && matchesRole && matchesDuration;
     });
-  }, [users, searchQuery, filterStatus, filterRole, filterDuration, userDurations, userResponseCounts]);
+  }, [
+    users,
+    searchQuery,
+    filterStatus,
+    filterRole,
+    filterDuration,
+    userDurations,
+    userResponseCounts,
+  ]);
 
   // Sort: unverified first, then by name
   const sortedUsers = useMemo(() => {
     return [...filteredUsers].sort((a, b) => {
       if (!a.verified && b.verified) return -1;
       if (a.verified && !b.verified) return 1;
-      return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+      return `${a.first_name} ${a.last_name}`.localeCompare(
+        `${b.first_name} ${b.last_name}`
+      );
     });
   }, [filteredUsers]);
 
@@ -151,7 +179,8 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
     }
   };
 
-  const isAllSelected = paginatedUsers.length > 0 && selectedUsers.size === paginatedUsers.length;
+  const isAllSelected =
+    paginatedUsers.length > 0 && selectedUsers.size === paginatedUsers.length;
 
   // Bulk actions
   const handleBulkVerify = async (verified: boolean) => {
@@ -162,31 +191,43 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
   };
 
   const handleExportCSV = () => {
-    const usersToExport = selectedUsers.size > 0
-      ? sortedUsers.filter((u) => selectedUsers.has(u.id))
-      : sortedUsers;
+    const usersToExport =
+      selectedUsers.size > 0
+        ? sortedUsers.filter((u) => selectedUsers.has(u.id))
+        : sortedUsers;
 
-    const headers = ["First Name", "Last Name", "Email", "Phone", "Account Type", "Verified", "Joined"];
+    const headers = [
+      'First Name',
+      'Last Name',
+      'Email',
+      'Phone',
+      'Account Type',
+      'Verified',
+      'Joined',
+    ];
     const rows = usersToExport.map((user) => [
       user.first_name,
       user.last_name,
       user.email,
       user.phone_number,
-      user.account_type === "transcriber" || user.transcription_guidelines_agreed ? "Transcriber" : "Recorder",
-      user.verified ? "Yes" : "No",
+      user.account_type === 'transcriber' ||
+      user.transcription_guidelines_agreed
+        ? 'Transcriber'
+        : 'Recorder',
+      user.verified ? 'Yes' : 'No',
       new Date(user.created_at).toLocaleDateString(),
     ]);
 
     const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n');
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `users_export_${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -200,9 +241,13 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
       {/* Tab Specific Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "Total Users", value: stats.total, Icon: Users },
-          { label: "Unverified", value: stats.unverified, Icon: ShieldCheck },
-          { label: "Pending Transcribers", value: stats.pendingTranscribers, Icon: Headphones },
+          { label: 'Total Users', value: stats.total, Icon: Users },
+          { label: 'Unverified', value: stats.unverified, Icon: ShieldCheck },
+          {
+            label: 'Pending Transcribers',
+            value: stats.pendingTranscribers,
+            Icon: Headphones,
+          },
         ].map(({ label, value, Icon }) => (
           <Card key={label} className="bg-card border-border/50">
             <CardContent className="p-3 flex items-center gap-3">
@@ -210,8 +255,12 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
                 <Icon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xl font-bold text-foreground leading-none tabular-nums">{value}</p>
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">{label}</p>
+                <p className="text-xl font-bold text-foreground leading-none tabular-nums">
+                  {value}
+                </p>
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
+                  {label}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -234,8 +283,14 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
           </div>
 
           {/* Status Filter */}
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
-            <SelectTrigger className="w-full sm:w-40 h-9" aria-label="Filter by status">
+          <Select
+            value={filterStatus}
+            onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}
+          >
+            <SelectTrigger
+              className="w-full sm:w-40 h-9"
+              aria-label="Filter by status"
+            >
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
@@ -246,8 +301,14 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
           </Select>
 
           {/* Role Filter */}
-          <Select value={filterRole} onValueChange={(v) => setFilterRole(v as typeof filterRole)}>
-            <SelectTrigger className="w-full sm:w-44 h-9" aria-label="Filter by role">
+          <Select
+            value={filterRole}
+            onValueChange={(v) => setFilterRole(v as typeof filterRole)}
+          >
+            <SelectTrigger
+              className="w-full sm:w-44 h-9"
+              aria-label="Filter by role"
+            >
               <SelectValue placeholder="Role" />
             </SelectTrigger>
             <SelectContent>
@@ -259,8 +320,14 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
           </Select>
 
           {/* Duration Filter */}
-          <Select value={filterDuration} onValueChange={(v) => setFilterDuration(v as typeof filterDuration)}>
-            <SelectTrigger className="w-full sm:w-48 h-9" aria-label="Filter by duration">
+          <Select
+            value={filterDuration}
+            onValueChange={(v) => setFilterDuration(v as typeof filterDuration)}
+          >
+            <SelectTrigger
+              className="w-full sm:w-48 h-9"
+              aria-label="Filter by duration"
+            >
               <SelectValue placeholder="Recording Duration" />
             </SelectTrigger>
             <SelectContent>
@@ -292,7 +359,7 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
           )}
           <Button size="sm" variant="outline" onClick={handleExportCSV}>
             <Download className="w-4 h-4 mr-1" />
-            Export {selectedUsers.size > 0 ? `(${selectedUsers.size})` : "All"}
+            Export {selectedUsers.size > 0 ? `(${selectedUsers.size})` : 'All'}
           </Button>
           <Button
             size="sm"
@@ -321,7 +388,7 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
             aria-label="Select all users on this page"
           />
           <span className="text-sm text-muted-foreground">
-            {isAllSelected ? "Deselect all" : "Select all on this page"}
+            {isAllSelected ? 'Deselect all' : 'Select all on this page'}
           </span>
         </label>
       )}
@@ -329,27 +396,29 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
       {/* User List */}
       <div className="divide-y divide-border/50 border border-border/50 rounded-lg bg-card overflow-hidden">
         {paginatedUsers.map((user) => {
-          const isTranscriber = user.account_type === "transcriber" || user.transcription_guidelines_agreed;
+          const isTranscriber =
+            user.account_type === 'transcriber' ||
+            user.transcription_guidelines_agreed;
           const isSelected = selectedUsers.has(user.id);
           const duration = userDurations?.[user.id] || 0;
           const mins = Math.floor(duration / 60);
           const secs = Math.floor(duration % 60);
           const roleSuffix = isTranscriber
             ? user.transcription_approved
-              ? " · Approved"
+              ? ' · Approved'
               : user.transcription_guidelines_agreed
-                ? " · Pending approval"
-                : ""
-            : "";
+                ? ' · Pending approval'
+                : ''
+            : '';
           return (
             <div
               key={user.id}
               className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border-l-2 transition-colors ${
                 isSelected
-                  ? "border-l-primary bg-primary/[0.03]"
+                  ? 'border-l-primary bg-primary/[0.03]'
                   : !user.verified
-                    ? "border-l-amber-500/60"
-                    : "border-l-transparent"
+                    ? 'border-l-amber-500/60'
+                    : 'border-l-transparent'
               }`}
             >
               <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
@@ -373,8 +442,8 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
                       variant="outline"
                       className={`text-[10px] gap-1 px-1.5 py-0 h-5 ${
                         user.verified
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                       }`}
                     >
                       {user.verified ? (
@@ -382,7 +451,7 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
                       ) : (
                         <Clock className="w-3 h-3" />
                       )}
-                      {user.verified ? "Verified" : "Pending"}
+                      {user.verified ? 'Verified' : 'Pending'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
@@ -396,15 +465,21 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
                       <Mic className="w-3 h-3" aria-hidden />
                     )}
                     <span>
-                      {isTranscriber ? "Transcriber" : "Recorder"}
+                      {isTranscriber ? 'Transcriber' : 'Recorder'}
                       {roleSuffix}
                     </span>
                     <span aria-hidden>·</span>
-                    <span className="tabular-nums">{userResponseCounts[user.id] || 0} answers</span>
+                    <span className="tabular-nums">
+                      {userResponseCounts[user.id] || 0} answers
+                    </span>
                     <span aria-hidden>·</span>
-                    <span className="tabular-nums">{mins}m {secs}s</span>
+                    <span className="tabular-nums">
+                      {mins}m {secs}s
+                    </span>
                     <span aria-hidden>·</span>
-                    <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+                    <span>
+                      Joined {new Date(user.created_at).toLocaleDateString()}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -440,12 +515,16 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       {user.transcription_approved ? (
-                        <DropdownMenuItem onClick={() => onApproveTranscriber(user.id, false)}>
+                        <DropdownMenuItem
+                          onClick={() => onApproveTranscriber(user.id, false)}
+                        >
                           <XCircle className="w-4 h-4 mr-2" />
                           Revoke transcription
                         </DropdownMenuItem>
                       ) : (
-                        <DropdownMenuItem onClick={() => onApproveTranscriber(user.id, true)}>
+                        <DropdownMenuItem
+                          onClick={() => onApproveTranscriber(user.id, true)}
+                        >
                           <ShieldCheck className="w-4 h-4 mr-2" />
                           Approve transcription
                         </DropdownMenuItem>
@@ -462,9 +541,12 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
           <div className="p-8 text-center">
             <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">
-              {searchQuery || filterStatus !== "all" || filterRole !== "all" || filterDuration !== "all"
-                ? "No users match your search or filter"
-                : "No users found"}
+              {searchQuery ||
+              filterStatus !== 'all' ||
+              filterRole !== 'all' ||
+              filterDuration !== 'all'
+                ? 'No users match your search or filter'
+                : 'No users found'}
             </p>
           </div>
         )}
@@ -484,29 +566,44 @@ export function AdminUsersTab({ users, onVerifyUser, onApproveTranscriber, userR
           </Button>
           <div className="flex items-center gap-1">
             {(() => {
-              const pages: (number | "ellipsis")[] = [];
+              const pages: (number | 'ellipsis')[] = [];
               const add = (p: number) => {
-                if (!pages.includes(p) && p >= 1 && p <= totalPages) pages.push(p);
+                if (!pages.includes(p) && p >= 1 && p <= totalPages)
+                  pages.push(p);
               };
-              const candidates = [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
-              const sorted = Array.from(new Set(candidates.filter((p) => p >= 1 && p <= totalPages))).sort((a, b) => a - b);
-              const out: (number | "ellipsis")[] = [];
+              const candidates = [
+                1,
+                currentPage - 1,
+                currentPage,
+                currentPage + 1,
+                totalPages,
+              ];
+              const sorted = Array.from(
+                new Set(candidates.filter((p) => p >= 1 && p <= totalPages))
+              ).sort((a, b) => a - b);
+              const out: (number | 'ellipsis')[] = [];
               sorted.forEach((p, i) => {
-                if (i > 0 && p - (sorted[i - 1] as number) > 1) out.push("ellipsis");
+                if (i > 0 && p - (sorted[i - 1] as number) > 1)
+                  out.push('ellipsis');
                 out.push(p);
               });
               return out.map((p, i) =>
-                p === "ellipsis" ? (
-                  <span key={`e-${i}`} className="px-1 text-muted-foreground text-sm">…</span>
+                p === 'ellipsis' ? (
+                  <span
+                    key={`e-${i}`}
+                    className="px-1 text-muted-foreground text-sm"
+                  >
+                    …
+                  </span>
                 ) : (
                   <Button
                     key={p}
-                    variant={p === currentPage ? "default" : "outline"}
+                    variant={p === currentPage ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrentPage(p)}
-                    className={`w-8 h-8 p-0 ${p === currentPage ? "bg-primary text-primary-foreground" : ""}`}
+                    className={`w-8 h-8 p-0 ${p === currentPage ? 'bg-primary text-primary-foreground' : ''}`}
                     aria-label={`Page ${p}`}
-                    aria-current={p === currentPage ? "page" : undefined}
+                    aria-current={p === currentPage ? 'page' : undefined}
                   >
                     {p}
                   </Button>

@@ -1,28 +1,14 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-
-interface AuthContextValue {
-  user: User | null;
-  isAdmin: boolean;
-  loading: boolean;
-  /** True once the initial session + role lookup have resolved. */
-  initialized: boolean;
-}
-
-const AuthContext = createContext<AuthContextValue>({
-  user: null,
-  isAdmin: false,
-  loading: true,
-  initialized: false,
-});
+import { useEffect, useState, ReactNode } from 'react';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { AuthContext } from '@/context/AuthContext';
 
 async function fetchIsAdmin(userId: string): Promise<boolean> {
   const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
     .maybeSingle();
   if (error) return false;
   return !!data;
@@ -60,11 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resolve(session?.user ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        resolve(session?.user ?? null);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      resolve(session?.user ?? null);
+    });
 
     return () => {
       cancelled = true;
@@ -77,8 +63,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

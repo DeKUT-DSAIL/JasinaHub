@@ -1,11 +1,11 @@
-import { MermaidDiagram } from "./MermaidDiagram";
+import { MermaidDiagram } from './MermaidDiagram';
 import {
   useCaseDiagram,
   recordingSequenceDiagram,
   transcriptionSequenceDiagram,
   erDiagram,
   componentDiagram,
-} from "./diagramDefinitions";
+} from './diagramDefinitions';
 
 export function PaperSystemDesign() {
   return (
@@ -13,17 +13,20 @@ export function PaperSystemDesign() {
       <h2 className="text-[17px] font-bold mb-3">3. System design</h2>
 
       <p className="mb-4">
-        This section presents the architectural design of JasinaHub through standard UML diagrams.
-        The system follows a client-server architecture using a Backend-as-a-Service (BaaS) model,
-        with a React single-page application communicating with PostgreSQL through auto-generated
-        REST APIs secured by Row-Level Security policies.
+        This section presents the architectural design of JasinaHub through
+        standard UML diagrams. The system follows a client-server architecture
+        using a Backend-as-a-Service (BaaS) model, with a React single-page
+        application communicating with PostgreSQL through auto-generated REST
+        APIs secured by Row-Level Security policies.
       </p>
 
       <h3 className="text-[15px] font-bold mb-2">3.1 Use case diagram</h3>
       <p className="mb-2">
-        The platform serves three primary actors: <em>Volunteers</em> who record voice responses,
-        <em>Transcribers</em> who convert audio to text, and <em>Administrators</em> who manage
-        quality assurance and dataset export. Figure 1 illustrates the complete set of use cases.
+        The platform serves three primary actors: <em>Volunteers</em> who record
+        voice responses,
+        <em>Transcribers</em> who convert audio to text, and{' '}
+        <em>Administrators</em> who manage quality assurance and dataset export.
+        Figure 1 illustrates the complete set of use cases.
       </p>
       <MermaidDiagram
         chart={useCaseDiagram}
@@ -31,12 +34,15 @@ export function PaperSystemDesign() {
         figureNumber="Figure 1"
       />
 
-      <h3 className="text-[15px] font-bold mb-2">3.2 Component and deployment architecture</h3>
+      <h3 className="text-[15px] font-bold mb-2">
+        3.2 Component and deployment architecture
+      </h3>
       <p className="mb-2">
-        JasinaHub is deployed as a progressive web application with a layered architecture.
-        The client layer handles UI rendering, offline storage, and media capture. The BaaS
-        layer provides authentication, database operations, file storage, and serverless functions.
-        Figure 2 shows the component relationships across these layers.
+        JasinaHub is deployed as a progressive web application with a layered
+        architecture. The client layer handles UI rendering, offline storage,
+        and media capture. The BaaS layer provides authentication, database
+        operations, file storage, and serverless functions. Figure 2 shows the
+        component relationships across these layers.
       </p>
       <MermaidDiagram
         chart={componentDiagram}
@@ -44,11 +50,14 @@ export function PaperSystemDesign() {
         figureNumber="Figure 2"
       />
 
-      <h3 className="text-[15px] font-bold mb-2">3.3 Voice recording sequence</h3>
+      <h3 className="text-[15px] font-bold mb-2">
+        3.3 Voice recording sequence
+      </h3>
       <p className="mb-2">
-        The voice recording pipeline is the primary data collection mechanism. Figure 3
-        details the interaction sequence from category selection through audio capture,
-        IndexedDB backup, cloud upload, and database persistence.
+        The voice recording pipeline is the primary data collection mechanism.
+        Figure 3 details the interaction sequence from category selection
+        through audio capture, IndexedDB backup, cloud upload, and database
+        persistence.
       </p>
       <MermaidDiagram
         chart={recordingSequenceDiagram}
@@ -56,12 +65,19 @@ export function PaperSystemDesign() {
         figureNumber="Figure 3"
       />
 
-      <h3 className="text-[15px] font-bold mb-2">3.4 Transcription assignment sequence</h3>
+      <h3 className="text-[15px] font-bold mb-2">
+        3.4 Transcription assignment sequence
+      </h3>
       <p className="mb-2">
-        Transcription uses an atomic locking mechanism to prevent duplicate work. The
-        <code className="text-[12px] bg-muted px-1 rounded"> claim_random_transcription()</code> PostgreSQL
-        function executes within a transaction, selecting an untranscribed response and inserting
-        a time-limited lock. Figure 4 shows this sequence.
+        Transcription uses an atomic locking mechanism to prevent duplicate
+        work. The
+        <code className="text-[12px] bg-muted px-1 rounded">
+          {' '}
+          claim_random_transcription()
+        </code>{' '}
+        PostgreSQL function executes within a transaction, selecting an
+        untranscribed response and inserting a time-limited lock. Figure 4 shows
+        this sequence.
       </p>
       <MermaidDiagram
         chart={transcriptionSequenceDiagram}
@@ -69,12 +85,18 @@ export function PaperSystemDesign() {
         figureNumber="Figure 4"
       />
 
-      <h3 className="text-[15px] font-bold mb-2">3.5 Entity-relationship diagram</h3>
+      <h3 className="text-[15px] font-bold mb-2">
+        3.5 Entity-relationship diagram
+      </h3>
       <p className="mb-2">
-        The database schema comprises nine tables with foreign key constraints and
-        Row-Level Security policies. The central entity is <code className="text-[12px] bg-muted px-1 rounded">voice_responses</code>,
-        linking volunteers' recordings to questions and enabling downstream transcription.
-        Figure 5 presents the complete ER diagram with attributes and cardinality.
+        The database schema comprises nine tables with foreign key constraints
+        and Row-Level Security policies. The central entity is{' '}
+        <code className="text-[12px] bg-muted px-1 rounded">
+          voice_responses
+        </code>
+        , linking volunteers' recordings to questions and enabling downstream
+        transcription. Figure 5 presents the complete ER diagram with attributes
+        and cardinality.
       </p>
       <MermaidDiagram
         chart={erDiagram}

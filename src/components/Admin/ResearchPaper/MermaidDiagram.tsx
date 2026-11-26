@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 // Lazy-load mermaid (~1MB) only when a diagram actually renders. We memoise
 // the import + initialise call so subsequent diagrams reuse the same module.
-let mermaidPromise: Promise<typeof import("mermaid").default> | null = null;
+let mermaidPromise: Promise<typeof import('mermaid').default> | null = null;
 
 function getMermaid() {
   if (!mermaidPromise) {
-    mermaidPromise = import("mermaid").then(({ default: mermaid }) => {
+    mermaidPromise = import('mermaid').then(({ default: mermaid }) => {
       mermaid.initialize({
         startOnLoad: false,
-        theme: "default",
-        securityLevel: "loose",
+        theme: 'default',
+        securityLevel: 'loose',
         fontFamily: '"Source Serif 4", Georgia, serif',
         fontSize: 13,
       });
@@ -26,7 +26,11 @@ interface MermaidDiagramProps {
   figureNumber: string;
 }
 
-export function MermaidDiagram({ chart, caption, figureNumber }: MermaidDiagramProps) {
+export function MermaidDiagram({
+  chart,
+  caption,
+  figureNumber,
+}: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +41,7 @@ export function MermaidDiagram({ chart, caption, figureNumber }: MermaidDiagramP
       try {
         const mermaid = await getMermaid();
         if (cancelled || !containerRef.current) return;
-        const id = `mermaid-${figureNumber.replace(/\s/g, "-")}-${Date.now()}`;
+        const id = `mermaid-${figureNumber.replace(/\s/g, '-')}-${Date.now()}`;
         const { svg } = await mermaid.render(id, chart);
         if (cancelled) return;
         if (containerRef.current) {
@@ -45,7 +49,7 @@ export function MermaidDiagram({ chart, caption, figureNumber }: MermaidDiagramP
         }
       } catch (e) {
         if (cancelled) return;
-        console.error("Mermaid render error:", e);
+        console.error('Mermaid render error:', e);
         setError(String(e));
       }
     };
@@ -61,7 +65,7 @@ export function MermaidDiagram({ chart, caption, figureNumber }: MermaidDiagramP
       {error ? (
         <pre className="text-destructive text-xs overflow-auto">{error}</pre>
       ) : (
-        <div className="overflow-auto" style={{ maxHeight: "70vh" }}>
+        <div className="overflow-auto" style={{ maxHeight: '70vh' }}>
           <div
             ref={containerRef}
             className="flex justify-center [&_svg]:max-w-full"

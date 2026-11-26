@@ -24,6 +24,7 @@ npm install
 ```
 
 3. (Optional) Add upstream remote to track original updates:
+
 ```bash
 git remote add upstream https://github.com/DeKUT-DSAIL/JasinaHub.git
 ```
@@ -35,7 +36,7 @@ git remote add upstream https://github.com/DeKUT-DSAIL/JasinaHub.git
 1. Create a free project on [supabase.com/dashboard](https://supabase.com/dashboard).
 2. Go to the **SQL Editor** (`>_`) in your project dashboard.
 3. Open [`supabase/setup_complete.sql`](supabase/setup_complete.sql), copy its contents, paste into the SQL Editor, and click **Run**.
-   *(This initializes all 14 tables including site_content, security policies, triggers, RPC procedures, storage buckets, and starter categories).*
+   _(This initializes all 14 tables including site_content, security policies, triggers, RPC procedures, storage buckets, and starter categories)._
 
 ---
 

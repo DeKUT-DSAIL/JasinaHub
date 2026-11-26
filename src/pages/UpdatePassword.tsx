@@ -1,28 +1,37 @@
-import { useState, useEffect } from "react";
-import { AuthLayout } from "@/components/Auth/AuthLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Lock, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
+import { useState, useEffect } from 'react';
+import { AuthLayout } from '@/components/Auth/AuthLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
 
 const passwordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number");
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
 
 export default function UpdatePassword() {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
+  const [errors, setErrors] = useState<{ password?: string; confirm?: string }>(
+    {}
+  );
   const [ready, setReady] = useState(false);
   const [linkInvalid, setLinkInvalid] = useState(false);
   const { toast } = useToast();
@@ -31,9 +40,15 @@ export default function UpdatePassword() {
   useEffect(() => {
     // Check if error parameters are present in URL query or hash (e.g., expired or invalid token)
     const searchParams = new URLSearchParams(window.location.search);
-    const hash = window.location.hash.startsWith("#") ? window.location.hash.substring(1) : window.location.hash;
+    const hash = window.location.hash.startsWith('#')
+      ? window.location.hash.substring(1)
+      : window.location.hash;
     const hashParams = new URLSearchParams(hash);
-    const urlError = searchParams.get("error_description") || hashParams.get("error_description") || searchParams.get("error") || hashParams.get("error");
+    const urlError =
+      searchParams.get('error_description') ||
+      hashParams.get('error_description') ||
+      searchParams.get('error') ||
+      hashParams.get('error');
     if (urlError) {
       setLinkInvalid(true);
       return;
@@ -48,7 +63,7 @@ export default function UpdatePassword() {
 
     // Supabase fires PASSWORD_RECOVERY or SIGNED_IN event when recovery token is parsed
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
         setReady(true);
       }
     });
@@ -78,14 +93,16 @@ export default function UpdatePassword() {
     }
 
     if (newPassword !== confirmPassword) {
-      setErrors({ confirm: "Passwords do not match" });
+      setErrors({ confirm: 'Passwords do not match' });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
 
       if (error) throw error;
 
@@ -93,17 +110,18 @@ export default function UpdatePassword() {
       await supabase.auth.signOut();
 
       toast({
-        title: "Password updated successfully",
-        description: "You can now log in with your new password.",
+        title: 'Password updated successfully',
+        description: 'You can now log in with your new password.',
       });
 
-      setTimeout(() => navigate("/login"), 2000);
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to reset password";
+      const message =
+        err instanceof Error ? err.message : 'Failed to reset password';
       toast({
-        title: "Error",
+        title: 'Error',
         description: message,
-        variant: "destructive",
+        variant: 'destructive',
       });
       setErrors({ password: message });
     } finally {
@@ -116,7 +134,8 @@ export default function UpdatePassword() {
       <AuthLayout title="Link Expired" subtitle="">
         <div className="space-y-4 text-center">
           <p className="text-sm text-gray-600">
-            This password reset link is invalid or has expired. Please request a new one.
+            This password reset link is invalid or has expired. Please request a
+            new one.
           </p>
           <div>
             <Link
@@ -142,7 +161,9 @@ export default function UpdatePassword() {
     );
   }
 
-  const passwordMatch = Boolean(newPassword && confirmPassword && newPassword === confirmPassword);
+  const passwordMatch = Boolean(
+    newPassword && confirmPassword && newPassword === confirmPassword
+  );
   const passwordStrength =
     newPassword.length >= 8 &&
     /[A-Z]/.test(newPassword) &&
@@ -150,17 +171,23 @@ export default function UpdatePassword() {
     /[0-9]/.test(newPassword);
 
   return (
-    <AuthLayout title="Reset Your Password" subtitle="Enter your new password below">
+    <AuthLayout
+      title="Reset Your Password"
+      subtitle="Enter your new password below"
+    >
       <form onSubmit={handlePasswordReset} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="newPassword" className="text-sm font-medium text-gray-900">
+          <Label
+            htmlFor="newPassword"
+            className="text-sm font-medium text-gray-900"
+          >
             New Password
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               id="newPassword"
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               placeholder="Enter new password"
               className="pl-10 pr-10 border-2 border-gray-200 focus:border-primary"
               value={newPassword}
@@ -172,7 +199,11 @@ export default function UpdatePassword() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
             </button>
           </div>
           {errors.password && (
@@ -184,24 +215,31 @@ export default function UpdatePassword() {
           {newPassword && !errors.password && (
             <p
               className={`text-xs flex items-center gap-1 ${
-                passwordStrength ? "text-green-600" : "text-gray-500"
+                passwordStrength ? 'text-green-600' : 'text-gray-500'
               }`}
             >
-              {passwordStrength ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+              {passwordStrength ? (
+                <CheckCircle className="w-3 h-3" />
+              ) : (
+                <XCircle className="w-3 h-3" />
+              )}
               At least 8 characters with uppercase, lowercase, and number
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">
+          <Label
+            htmlFor="confirmPassword"
+            className="text-sm font-medium text-gray-900"
+          >
             Confirm New Password
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
+              type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Confirm new password"
               className="pl-10 pr-10 border-2 border-gray-200 focus:border-primary"
               value={confirmPassword}
@@ -213,7 +251,11 @@ export default function UpdatePassword() {
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showConfirmPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
             </button>
           </div>
           {errors.confirm && (
@@ -236,7 +278,7 @@ export default function UpdatePassword() {
           size="lg"
           disabled={isLoading || !passwordMatch || !passwordStrength}
         >
-          {isLoading ? "Updating Password..." : "Reset Password"}
+          {isLoading ? 'Updating Password...' : 'Reset Password'}
         </Button>
 
         <div className="text-center">

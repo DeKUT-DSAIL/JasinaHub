@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Users, BarChart3, CheckCircle, XCircle, Timer } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  FileText,
+  Users,
+  BarChart3,
+  CheckCircle,
+  XCircle,
+  Timer,
+} from 'lucide-react';
 
 interface AdminStatsCardsProps {
   questionsCount: number;
@@ -37,7 +44,9 @@ function useCountUp(target: number, duration = 1000): number {
   const prevTarget = useRef(0);
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
     if (prefersReduced) {
       setValue(target);
       return;
@@ -63,16 +72,16 @@ function useCountUp(target: number, duration = 1000): number {
 }
 
 const STAT_COLORS: Record<string, string> = {
-  Questions: "hsl(217, 91%, 60%)",   // blue
-  Users: "hsl(160, 84%, 39%)",       // emerald
-  Responses: "hsl(38, 92%, 50%)",    // amber
-  Accepted: "hsl(142, 71%, 45%)",    // green
-  Rejected: "hsl(0, 84%, 60%)",      // red
-  "Total Time": "hsl(239, 84%, 67%)",    // indigo
-  "Accepted Time": "hsl(142, 71%, 45%)", // green
-  "Rejected Time": "hsl(0, 84%, 60%)",   // red
-  "Verified Transcriptions": "hsl(142, 71%, 45%)", // green
-  "Pending Verification": "hsl(38, 92%, 50%)", // amber
+  Questions: 'hsl(217, 91%, 60%)', // blue
+  Users: 'hsl(160, 84%, 39%)', // emerald
+  Responses: 'hsl(38, 92%, 50%)', // amber
+  Accepted: 'hsl(142, 71%, 45%)', // green
+  Rejected: 'hsl(0, 84%, 60%)', // red
+  'Total Time': 'hsl(239, 84%, 67%)', // indigo
+  'Accepted Time': 'hsl(142, 71%, 45%)', // green
+  'Rejected Time': 'hsl(0, 84%, 60%)', // red
+  'Verified Transcriptions': 'hsl(142, 71%, 45%)', // green
+  'Pending Verification': 'hsl(38, 92%, 50%)', // amber
 };
 
 export function AdminStatsCards({
@@ -88,16 +97,61 @@ export function AdminStatsCards({
   pendingTranscriptions,
 }: AdminStatsCardsProps) {
   const mainStats = [
-    { label: "Questions", value: questionsCount, isDuration: false, icon: FileText },
-    { label: "Users", value: totalUsers, isDuration: false, icon: Users },
-    { label: "Responses", value: totalResponses, isDuration: false, icon: BarChart3 },
-    { label: "Total Time", value: totalDurationSeconds, isDuration: true, icon: Timer },
-    { label: "Accepted", value: acceptedResponses, isDuration: false, icon: CheckCircle },
-    { label: "Rejected", value: rejectedResponses, isDuration: false, icon: XCircle },
-    { label: "Accepted Time", value: acceptedDurationSeconds, isDuration: true, icon: Timer },
-    { label: "Rejected Time", value: rejectedDurationSeconds, isDuration: true, icon: Timer },
-    { label: "Verified Transcriptions", value: verifiedTranscriptions, isDuration: false, icon: CheckCircle },
-    { label: "Pending Verification", value: pendingTranscriptions, isDuration: false, icon: Timer },
+    {
+      label: 'Questions',
+      value: questionsCount,
+      isDuration: false,
+      icon: FileText,
+    },
+    { label: 'Users', value: totalUsers, isDuration: false, icon: Users },
+    {
+      label: 'Responses',
+      value: totalResponses,
+      isDuration: false,
+      icon: BarChart3,
+    },
+    {
+      label: 'Total Time',
+      value: totalDurationSeconds,
+      isDuration: true,
+      icon: Timer,
+    },
+    {
+      label: 'Accepted',
+      value: acceptedResponses,
+      isDuration: false,
+      icon: CheckCircle,
+    },
+    {
+      label: 'Rejected',
+      value: rejectedResponses,
+      isDuration: false,
+      icon: XCircle,
+    },
+    {
+      label: 'Accepted Time',
+      value: acceptedDurationSeconds,
+      isDuration: true,
+      icon: Timer,
+    },
+    {
+      label: 'Rejected Time',
+      value: rejectedDurationSeconds,
+      isDuration: true,
+      icon: Timer,
+    },
+    {
+      label: 'Verified Transcriptions',
+      value: verifiedTranscriptions,
+      isDuration: false,
+      icon: CheckCircle,
+    },
+    {
+      label: 'Pending Verification',
+      value: pendingTranscriptions,
+      isDuration: false,
+      icon: Timer,
+    },
   ];
 
   return (
@@ -110,7 +164,7 @@ export function AdminStatsCards({
             value={stat.value}
             isDuration={stat.isDuration}
             icon={stat.icon}
-            color={STAT_COLORS[stat.label] || "hsl(0, 0%, 50%)"}
+            color={STAT_COLORS[stat.label] || 'hsl(0, 0%, 50%)'}
           />
         ))}
       </div>

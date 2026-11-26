@@ -1,6 +1,6 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlayCircle, Clock, CheckCircle } from "lucide-react";
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { PlayCircle, Clock, CheckCircle } from 'lucide-react';
 
 interface CategoryCardProps {
   title: string;
@@ -69,10 +69,14 @@ export const CategoryCard = ({
 
         <Button
           onClick={onStart}
-          variant={isCompleted ? "secondary" : "default"}
+          variant={isCompleted ? 'secondary' : 'default'}
           className="w-full mt-auto"
         >
-          {isCompleted ? "Review Responses" : completedCount > 0 ? "Continue" : "Start"}
+          {isCompleted
+            ? 'Review Responses'
+            : completedCount > 0
+              ? 'Continue'
+              : 'Start'}
         </Button>
       </div>
     </Card>
