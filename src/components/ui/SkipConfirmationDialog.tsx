@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,10 +8,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { SkipForward } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { SkipForward } from 'lucide-react';
+import { SKIP_CONFIRMATION_STORAGE_KEY } from '@/lib/skipConfirmation';
 
 interface SkipConfirmationDialogProps {
   open: boolean;
@@ -19,8 +20,6 @@ interface SkipConfirmationDialogProps {
   onConfirmSkip: () => void;
   questionNumber: number;
 }
-
-const STORAGE_KEY = "skip_confirmation_disabled";
 
 export const SkipConfirmationDialog = ({
   open,
@@ -32,7 +31,7 @@ export const SkipConfirmationDialog = ({
 
   const handleConfirm = () => {
     if (dontAskAgain) {
-      localStorage.setItem(STORAGE_KEY, "true");
+      localStorage.setItem(SKIP_CONFIRMATION_STORAGE_KEY, 'true');
     }
     onConfirmSkip();
     onOpenChange(false);
@@ -43,16 +42,21 @@ export const SkipConfirmationDialog = ({
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-2">
-            <SkipForward className="w-6 h-6 text-amber-600" aria-hidden="true" />
+            <SkipForward
+              className="w-6 h-6 text-amber-600"
+              aria-hidden="true"
+            />
           </div>
           <AlertDialogTitle className="text-center">
             Skip Question {questionNumber}?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            You haven't recorded an answer for this question. Are you sure you want to skip it? You can come back later to answer skipped questions.
+            You haven't recorded an answer for this question. Are you sure you
+            want to skip it? You can come back later to answer skipped
+            questions.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <div className="flex items-center space-x-2 py-4 justify-center">
           <Checkbox
             id="dontAskAgain"
@@ -81,9 +85,4 @@ export const SkipConfirmationDialog = ({
       </AlertDialogContent>
     </AlertDialog>
   );
-};
-
-// Utility function to check if skip confirmation should be shown
-export const shouldShowSkipConfirmation = (): boolean => {
-  return localStorage.getItem(STORAGE_KEY) !== "true";
 };

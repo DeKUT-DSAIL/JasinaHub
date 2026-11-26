@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { AdminDriveBackfill } from "./AdminDriveBackfill";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { AdminDriveBackfill } from './AdminDriveBackfill';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import {
   ChevronDown,
   ChevronRight,
@@ -37,10 +37,10 @@ import {
   CheckSquare,
   Square,
   X,
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+} from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserResponse {
   id: string;
@@ -86,7 +86,7 @@ const getDirectDownloadUrl = (url: string): string => {
   const patterns = [
     /\/d\/([a-zA-Z0-9-_]+)/,
     /id=([a-zA-Z0-9-_]+)/,
-    /\/file\/d\/([a-zA-Z0-9-_]+)/
+    /\/file\/d\/([a-zA-Z0-9-_]+)/,
   ];
 
   for (const pattern of patterns) {
@@ -102,7 +102,7 @@ const getGoogleDriveViewUrl = (url: string): string => {
   const patterns = [
     /\/d\/([a-zA-Z0-9-_]+)/,
     /id=([a-zA-Z0-9-_]+)/,
-    /\/file\/d\/([a-zA-Z0-9-_]+)/
+    /\/file\/d\/([a-zA-Z0-9-_]+)/,
   ];
 
   for (const pattern of patterns) {
@@ -123,20 +123,29 @@ export function AdminResponsesTab({
   currentPage,
   pageSize,
   totalCount,
-  onPageChange
+  onPageChange,
 }: AdminResponsesTabProps) {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchResults, setSearchResults] = useState<UserResponse[] | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchResults, setSearchResults] = useState<UserResponse[] | null>(
+    null
+  );
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
-  const [userAllResponses, setUserAllResponses] = useState<Record<string, UserResponse[]>>({});
+  const [userAllResponses, setUserAllResponses] = useState<
+    Record<string, UserResponse[]>
+  >({});
   const [loadingUsers, setLoadingUsers] = useState<Set<string>>(new Set());
 
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, 'accepted' | 'rejected'>>({});
-  const [confirmAction, setConfirmAction] = useState<{ responseId: string; status: 'accepted' | 'rejected' } | null>(null);
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, 'accepted' | 'rejected'>
+  >({});
+  const [confirmAction, setConfirmAction] = useState<{
+    responseId: string;
+    status: 'accepted' | 'rejected';
+  } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
 
@@ -147,11 +156,11 @@ export function AdminResponsesTab({
   const handleConfirmAction = async () => {
     if (!confirmAction) return;
     const { responseId, status } = confirmAction;
-    setStatusOverrides(prev => ({ ...prev, [responseId]: status }));
-    setUserAllResponses(prev => {
+    setStatusOverrides((prev) => ({ ...prev, [responseId]: status }));
+    setUserAllResponses((prev) => {
       const updated = { ...prev };
       for (const userId in updated) {
-        updated[userId] = updated[userId].map(r =>
+        updated[userId] = updated[userId].map((r) =>
           r.id === responseId ? { ...r, status } : r
         );
       }
@@ -172,42 +181,55 @@ export function AdminResponsesTab({
     const idsToUpdate = Array.from(selectedIds);
     try {
       const newOverrides = { ...statusOverrides };
-      idsToUpdate.forEach(id => { newOverrides[id] = status; });
+      idsToUpdate.forEach((id) => {
+        newOverrides[id] = status;
+      });
       setStatusOverrides(newOverrides);
-      setUserAllResponses(prev => {
+      setUserAllResponses((prev) => {
         const updated = { ...prev };
         for (const userId in updated) {
-          updated[userId] = updated[userId].map(r =>
+          updated[userId] = updated[userId].map((r) =>
             selectedIds.has(r.id) ? { ...r, status } : r
           );
         }
         return updated;
       });
-      await Promise.all(idsToUpdate.map(id => onUpdateStatus(id, status)));
+      await Promise.all(idsToUpdate.map((id) => onUpdateStatus(id, status)));
       toast({
-        title: "Bulk Action Complete",
+        title: 'Bulk Action Complete',
         description: `Successfully ${status === 'accepted' ? 'accepted' : 'rejected'} ${idsToUpdate.length} responses.`,
       });
       setSelectedIds(new Set());
     } catch (error) {
-      console.error("Bulk action error:", error);
-      toast({ title: "Error", description: "Some updates may have failed. Please refresh.", variant: "destructive" });
+      console.error('Bulk action error:', error);
+      toast({
+        title: 'Error',
+        description: 'Some updates may have failed. Please refresh.',
+        variant: 'destructive',
+      });
     } finally {
       setIsBulkActionLoading(false);
     }
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredResponses.length && filteredResponses.length > 0) {
+    if (
+      selectedIds.size === filteredResponses.length &&
+      filteredResponses.length > 0
+    ) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredResponses.map(r => r.id)));
+      setSelectedIds(new Set(filteredResponses.map((r) => r.id)));
     }
   };
 
   const toggleSelectId = (id: string) => {
     const next = new Set(selectedIds);
-    if (next.has(id)) { next.delete(id); } else { next.add(id); }
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelectedIds(next);
   };
 
@@ -226,7 +248,9 @@ export function AdminResponsesTab({
       const { data: matchingProfiles } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
-        .or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%`);
+        .or(
+          `first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%`
+        );
 
       if (!matchingProfiles || matchingProfiles.length === 0) {
         // Also try searching by question text
@@ -236,7 +260,7 @@ export function AdminResponsesTab({
           .ilike('question_text', `%${term}%`);
 
         if (matchingQuestions && matchingQuestions.length > 0) {
-          const questionIds = matchingQuestions.map(q => q.id);
+          const questionIds = matchingQuestions.map((q) => q.id);
           const { data: questionResponses } = await supabase
             .from('voice_responses')
             .select('*')
@@ -245,18 +269,34 @@ export function AdminResponsesTab({
             .limit(500);
 
           if (questionResponses && questionResponses.length > 0) {
-            const profileIds = [...new Set(questionResponses.map(r => r.user_id))];
-            const qIds = [...new Set(questionResponses.map(r => r.question_id))];
+            const profileIds = [
+              ...new Set(questionResponses.map((r) => r.user_id)),
+            ];
+            const qIds = [
+              ...new Set(questionResponses.map((r) => r.question_id)),
+            ];
 
             const [profilesRes, questionsRes] = await Promise.all([
-              supabase.from('profiles').select('id, first_name, last_name, email').in('id', profileIds),
-              supabase.from('questions').select('id, question_text').in('id', qIds),
+              supabase
+                .from('profiles')
+                .select('id, first_name, last_name, email')
+                .in('id', profileIds),
+              supabase
+                .from('questions')
+                .select('id, question_text')
+                .in('id', qIds),
             ]);
 
-            const enriched: UserResponse[] = questionResponses.map(r => ({
+            const enriched: UserResponse[] = questionResponses.map((r) => ({
               ...r,
-              profiles: profilesRes.data?.find(p => p.id === r.user_id) || { first_name: '', last_name: '', email: '' },
-              questions: questionsRes.data?.find(q => q.id === r.question_id) || { question_text: '' },
+              profiles: profilesRes.data?.find((p) => p.id === r.user_id) || {
+                first_name: '',
+                last_name: '',
+                email: '',
+              },
+              questions: questionsRes.data?.find(
+                (q) => q.id === r.question_id
+              ) || { question_text: '' },
             }));
 
             setSearchResults(enriched);
@@ -268,9 +308,9 @@ export function AdminResponsesTab({
         }
       } else {
         // Fetch all responses for matching users
-        const userIds = matchingProfiles.map(p => p.id);
+        const userIds = matchingProfiles.map((p) => p.id);
         const allResults: any[] = [];
-        
+
         // Fetch in batches to handle many users
         for (let i = 0; i < userIds.length; i += 10) {
           const batch = userIds.slice(i, i + 10);
@@ -279,23 +319,29 @@ export function AdminResponsesTab({
             .select('*')
             .in('user_id', batch)
             .order('created_at', { ascending: false });
-          
+
           if (batchResponses) allResults.push(...batchResponses);
         }
 
         if (allResults.length > 0) {
-          const questionIds = [...new Set(allResults.map(r => r.question_id))];
+          const questionIds = [
+            ...new Set(allResults.map((r) => r.question_id)),
+          ];
           const { data: questions } = await supabase
             .from('questions')
             .select('id, question_text')
             .in('id', questionIds);
 
-          const profileMap = new Map(matchingProfiles.map(p => [p.id, p]));
-          const questionMap = new Map(questions?.map(q => [q.id, q]) || []);
+          const profileMap = new Map(matchingProfiles.map((p) => [p.id, p]));
+          const questionMap = new Map(questions?.map((q) => [q.id, q]) || []);
 
-          const enriched: UserResponse[] = allResults.map(r => ({
+          const enriched: UserResponse[] = allResults.map((r) => ({
             ...r,
-            profiles: profileMap.get(r.user_id) || { first_name: '', last_name: '', email: '' },
+            profiles: profileMap.get(r.user_id) || {
+              first_name: '',
+              last_name: '',
+              email: '',
+            },
             questions: questionMap.get(r.question_id) || { question_text: '' },
           }));
 
@@ -305,7 +351,7 @@ export function AdminResponsesTab({
         }
       }
     } catch (error) {
-      console.error("Search error:", error);
+      console.error('Search error:', error);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -338,33 +384,48 @@ export function AdminResponsesTab({
   // Use search results when available, otherwise use paginated responses
   const baseResponses = searchResults !== null ? searchResults : responses;
 
-  const filteredResponses = baseResponses.filter(response => {
+  const filteredResponses = baseResponses.filter((response) => {
     const effectiveStatus = getEffectiveStatus(response);
-    const matchesStatus = statusFilter === "all" ||
-      (statusFilter === "migration_pending"
-        ? (effectiveStatus === 'accepted' && (!response.audio_file_url || !response.audio_file_url.includes('supabase.co/storage')))
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'migration_pending'
+        ? effectiveStatus === 'accepted' &&
+          (!response.audio_file_url ||
+            !response.audio_file_url.includes('supabase.co/storage'))
         : effectiveStatus === statusFilter);
 
     return matchesStatus;
   });
 
-  const groupedResponses = filteredResponses.reduce((acc, response) => {
-    const userId = response.user_id;
-    if (!acc[userId]) {
-      acc[userId] = {
-        user: response.profiles,
-        responses: [],
-        totalDuration: 0
-      };
-    }
-    acc[userId].responses.push(response);
-    const cappedDuration = Math.min(response.duration_seconds || 0, 30);
-    acc[userId].totalDuration += cappedDuration;
-    return acc;
-  }, {} as Record<string, { user: { first_name: string; last_name: string; email: string }, responses: UserResponse[], totalDuration: number }>);
+  const groupedResponses = filteredResponses.reduce(
+    (acc, response) => {
+      const userId = response.user_id;
+      if (!acc[userId]) {
+        acc[userId] = {
+          user: response.profiles,
+          responses: [],
+          totalDuration: 0,
+        };
+      }
+      acc[userId].responses.push(response);
+      const cappedDuration = Math.min(response.duration_seconds || 0, 30);
+      acc[userId].totalDuration += cappedDuration;
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        user: { first_name: string; last_name: string; email: string };
+        responses: UserResponse[];
+        totalDuration: number;
+      }
+    >
+  );
 
   const sortedUsers = Object.entries(groupedResponses).sort(([, a], [, b]) =>
-    `${a.user.first_name} ${a.user.last_name}`.localeCompare(`${b.user.first_name} ${b.user.last_name}`)
+    `${a.user.first_name} ${a.user.last_name}`.localeCompare(
+      `${b.user.first_name} ${b.user.last_name}`
+    )
   );
 
   const toggleUserExpanded = async (userId: string) => {
@@ -381,7 +442,7 @@ export function AdminResponsesTab({
 
     // Fetch ALL responses for this user if not already loaded
     if (!userAllResponses[userId]) {
-      setLoadingUsers(prev => new Set(prev).add(userId));
+      setLoadingUsers((prev) => new Set(prev).add(userId));
 
       try {
         // Fetch all responses for this user with pagination to bypass 1000 limit
@@ -392,10 +453,12 @@ export function AdminResponsesTab({
 
         while (hasMore) {
           const { data: batch, error } = await supabase
-            .from("voice_responses")
-            .select("id, user_id, question_id, response_type, text_response, audio_file_url, created_at, status, duration_seconds")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false })
+            .from('voice_responses')
+            .select(
+              'id, user_id, question_id, response_type, text_response, audio_file_url, created_at, status, duration_seconds'
+            )
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
             .range(offset, offset + batchSize - 1);
 
           if (error) throw error;
@@ -410,34 +473,47 @@ export function AdminResponsesTab({
         }
 
         // Fetch question texts
-        const questionIds = [...new Set(allUserResponses.map(r => r.question_id))];
+        const questionIds = [
+          ...new Set(allUserResponses.map((r) => r.question_id)),
+        ];
         const { data: questions } = await supabase
-          .from("questions")
-          .select("id, question_text")
-          .in("id", questionIds);
+          .from('questions')
+          .select('id, question_text')
+          .in('id', questionIds);
 
-        const questionMap = new Map(questions?.map(q => [q.id, q.question_text]) || []);
+        const questionMap = new Map(
+          questions?.map((q) => [q.id, q.question_text]) || []
+        );
 
         // Get user profile from existing data
-        const userProfile = groupedResponses[userId]?.user || { first_name: "", last_name: "", email: "" };
+        const userProfile = groupedResponses[userId]?.user || {
+          first_name: '',
+          last_name: '',
+          email: '',
+        };
 
         // Enrich responses with profile and question data
-        const enrichedResponses: UserResponse[] = allUserResponses.map(r => ({
+        const enrichedResponses: UserResponse[] = allUserResponses.map((r) => ({
           ...r,
           profiles: userProfile,
-          questions: { question_text: questionMap.get(r.question_id) || "Unknown Question" }
+          questions: {
+            question_text: questionMap.get(r.question_id) || 'Unknown Question',
+          },
         }));
 
-        setUserAllResponses(prev => ({ ...prev, [userId]: enrichedResponses }));
+        setUserAllResponses((prev) => ({
+          ...prev,
+          [userId]: enrichedResponses,
+        }));
       } catch (error) {
-        console.error("Error fetching user responses:", error);
+        console.error('Error fetching user responses:', error);
         toast({
-          title: "Error",
-          description: "Failed to load all responses for this user",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to load all responses for this user',
+          variant: 'destructive',
         });
       } finally {
-        setLoadingUsers(prev => {
+        setLoadingUsers((prev) => {
           const next = new Set(prev);
           next.delete(userId);
           return next;
@@ -451,8 +527,8 @@ export function AdminResponsesTab({
     window.open(viewUrl, '_blank', 'noopener,noreferrer,width=800,height=600');
 
     toast({
-      title: "Opening Audio Player",
-      description: "Audio player opened in new window",
+      title: 'Opening Audio Player',
+      description: 'Audio player opened in new window',
     });
   };
 
@@ -475,15 +551,15 @@ export function AdminResponsesTab({
       }, 100);
 
       toast({
-        title: "Download Started",
+        title: 'Download Started',
         description: "Check your browser's downloads folder.",
       });
     } catch (error) {
-      console.error("Error downloading audio:", error);
+      console.error('Error downloading audio:', error);
       toast({
-        title: "Download Failed",
-        description: "Could not download audio.",
-        variant: "destructive",
+        title: 'Download Failed',
+        description: 'Could not download audio.',
+        variant: 'destructive',
       });
     }
   };
@@ -509,8 +585,12 @@ export function AdminResponsesTab({
               <Clock className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground leading-none">{formatDuration(responseCounts.totalDuration)}</p>
-              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Total Time</p>
+              <p className="text-xl font-bold text-foreground leading-none">
+                {formatDuration(responseCounts.totalDuration)}
+              </p>
+              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
+                Total Time
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -521,10 +601,16 @@ export function AdminResponsesTab({
             </div>
             <div>
               <div className="flex items-baseline gap-2">
-                <p className="text-xl font-bold text-foreground leading-none">{responseCounts.accepted}</p>
-                <span className="text-lg font-bold text-emerald-600 leading-none">({formatDuration(responseCounts.acceptedDuration)})</span>
+                <p className="text-xl font-bold text-foreground leading-none">
+                  {responseCounts.accepted}
+                </p>
+                <span className="text-lg font-bold text-emerald-600 leading-none">
+                  ({formatDuration(responseCounts.acceptedDuration)})
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Accepted</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
+                Accepted
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -535,10 +621,16 @@ export function AdminResponsesTab({
             </div>
             <div>
               <div className="flex items-baseline gap-2">
-                <p className="text-xl font-bold text-foreground leading-none">{responseCounts.rejected}</p>
-                <span className="text-lg font-bold text-red-600 leading-none">({formatDuration(responseCounts.rejectedDuration)})</span>
+                <p className="text-xl font-bold text-foreground leading-none">
+                  {responseCounts.rejected}
+                </p>
+                <span className="text-lg font-bold text-red-600 leading-none">
+                  ({formatDuration(responseCounts.rejectedDuration)})
+                </span>
               </div>
-              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Rejected</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
+                Rejected
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -546,7 +638,10 @@ export function AdminResponsesTab({
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
         <div className="text-center lg:text-left flex items-center gap-4">
           {selectedIds.size > 0 && (
-            <Badge variant="secondary" className="animate-in zoom-in duration-300 bg-primary/10 text-primary border-primary/20">
+            <Badge
+              variant="secondary"
+              className="animate-in zoom-in duration-300 bg-primary/10 text-primary border-primary/20"
+            >
               {selectedIds.size} selected
             </Badge>
           )}
@@ -566,7 +661,7 @@ export function AdminResponsesTab({
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm("")}
+                onClick={() => setSearchTerm('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
@@ -582,7 +677,9 @@ export function AdminResponsesTab({
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="accepted">Accepted</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="migration_pending">Migration Pending</SelectItem>
+              <SelectItem value="migration_pending">
+                Migration Pending
+              </SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -601,7 +698,8 @@ export function AdminResponsesTab({
       {/* Search results indicator */}
       {searchTerm && searchResults !== null && !isSearching && (
         <p className="text-sm text-muted-foreground">
-          Found {filteredResponses.length} responses from {sortedUsers.length} user{sortedUsers.length !== 1 ? 's' : ''} matching "{searchTerm}"
+          Found {filteredResponses.length} responses from {sortedUsers.length}{' '}
+          user{sortedUsers.length !== 1 ? 's' : ''} matching "{searchTerm}"
         </p>
       )}
 
@@ -627,7 +725,11 @@ export function AdminResponsesTab({
               disabled={isBulkActionLoading}
               className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 shadow-sm rounded-xl"
             >
-              {isBulkActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              {isBulkActionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4" />
+              )}
               Approve {selectedIds.size}
             </Button>
             <Button
@@ -646,7 +748,10 @@ export function AdminResponsesTab({
 
       <div className="space-y-3 sm:space-y-4">
         {sortedUsers.map(([userId, { user, responses, totalDuration }]) => (
-          <Card key={userId} className="bg-card border-border/50 shadow-sm overflow-hidden">
+          <Card
+            key={userId}
+            className="bg-card border-border/50 shadow-sm overflow-hidden"
+          >
             <div
               className="p-3 sm:p-4 cursor-pointer hover:bg-accent/50 transition-colors"
               onClick={() => toggleUserExpanded(userId)}
@@ -660,21 +765,33 @@ export function AdminResponsesTab({
                   )}
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                     <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white text-xs sm:text-sm">
-                      {user.first_name[0]}{user.last_name[0]}
+                      {user.first_name[0]}
+                      {user.last_name[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="font-semibold text-foreground text-sm sm:text-base truncate">{user.first_name} {user.last_name}</p>
-                    <p className="text-muted-foreground text-xs sm:text-sm truncate">{user.email}</p>
+                    <p className="font-semibold text-foreground text-sm sm:text-base truncate">
+                      {user.first_name} {user.last_name}
+                    </p>
+                    <p className="text-muted-foreground text-xs sm:text-sm truncate">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                   <Badge variant="secondary" className="text-xs">
-                    {userResponseCounts[userId] || responses.length} response{(userResponseCounts[userId] || responses.length) !== 1 ? 's' : ''}
+                    {userResponseCounts[userId] || responses.length} response
+                    {(userResponseCounts[userId] || responses.length) !== 1
+                      ? 's'
+                      : ''}
                   </Badge>
-                  <Badge variant="outline" className="text-xs hidden sm:flex items-center gap-1">
+                  <Badge
+                    variant="outline"
+                    className="text-xs hidden sm:flex items-center gap-1"
+                  >
                     <Clock className="w-3 h-3" />
-                    {Math.floor(totalDuration / 60)}:{(totalDuration % 60).toString().padStart(2, '0')}
+                    {Math.floor(totalDuration / 60)}:
+                    {(totalDuration % 60).toString().padStart(2, '0')}
                   </Badge>
                 </div>
               </div>
@@ -685,13 +802,18 @@ export function AdminResponsesTab({
                 {loadingUsers.has(userId) ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-                    <span className="text-muted-foreground">Loading all responses...</span>
+                    <span className="text-muted-foreground">
+                      Loading all responses...
+                    </span>
                   </div>
                 ) : (
                   <>
                     {/* Use fetched responses if available, otherwise fall back to paginated responses */}
                     {(userAllResponses[userId] || responses).map((response) => (
-                      <div key={response.id} className="p-3 sm:p-4 border-b border-border/50 last:border-b-0 flex gap-4">
+                      <div
+                        key={response.id}
+                        className="p-3 sm:p-4 border-b border-border/50 last:border-b-0 flex gap-4"
+                      >
                         <div className="pt-1 select-none">
                           <Checkbox
                             checked={selectedIds.has(response.id)}
@@ -701,20 +823,29 @@ export function AdminResponsesTab({
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground line-clamp-2">{response.questions.question_text}</p>
+                            <p className="text-sm font-medium text-foreground line-clamp-2">
+                              {response.questions.question_text}
+                            </p>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                               {(() => {
-                                const effectiveStatus = getEffectiveStatus(response);
+                                const effectiveStatus =
+                                  getEffectiveStatus(response);
                                 return (
                                   <Badge
                                     variant={
-                                      effectiveStatus === 'accepted' ? 'default' :
-                                        effectiveStatus === 'rejected' ? 'destructive' : 'secondary'
+                                      effectiveStatus === 'accepted'
+                                        ? 'default'
+                                        : effectiveStatus === 'rejected'
+                                          ? 'destructive'
+                                          : 'secondary'
                                     }
-                                    className={`text-xs ${effectiveStatus === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                                      effectiveStatus === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                                        'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                                      }`}
+                                    className={`text-xs ${
+                                      effectiveStatus === 'accepted'
+                                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                        : effectiveStatus === 'rejected'
+                                          ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                          : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                    }`}
                                   >
                                     {effectiveStatus}
                                   </Badge>
@@ -738,7 +869,9 @@ export function AdminResponsesTab({
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => playAudioInDrive(response.audio_file_url!)}
+                                  onClick={() =>
+                                    playAudioInDrive(response.audio_file_url!)
+                                  }
                                   className="text-xs gap-1 h-8"
                                 >
                                   <Play className="w-3 h-3" />
@@ -747,16 +880,30 @@ export function AdminResponsesTab({
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => downloadAudio(response.audio_file_url!, response.id)}
+                                  onClick={() =>
+                                    downloadAudio(
+                                      response.audio_file_url!,
+                                      response.id
+                                    )
+                                  }
                                   className="text-xs gap-1 h-8"
                                 >
                                   <Download className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Download</span>
+                                  <span className="hidden sm:inline">
+                                    Download
+                                  </span>
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => window.open(getGoogleDriveViewUrl(response.audio_file_url!), '_blank')}
+                                  onClick={() =>
+                                    window.open(
+                                      getGoogleDriveViewUrl(
+                                        response.audio_file_url!
+                                      ),
+                                      '_blank'
+                                    )
+                                  }
                                   className="text-xs gap-1 h-8"
                                 >
                                   <ExternalLink className="w-3 h-3" />
@@ -768,20 +915,34 @@ export function AdminResponsesTab({
                               <>
                                 <Button
                                   size="sm"
-                                  onClick={() => setConfirmAction({ responseId: response.id, status: 'accepted' })}
+                                  onClick={() =>
+                                    setConfirmAction({
+                                      responseId: response.id,
+                                      status: 'accepted',
+                                    })
+                                  }
                                   className="text-xs gap-1 h-8 bg-green-500 hover:bg-green-600"
                                 >
                                   <CheckCircle className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Accept</span>
+                                  <span className="hidden sm:inline">
+                                    Accept
+                                  </span>
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => setConfirmAction({ responseId: response.id, status: 'rejected' })}
+                                  onClick={() =>
+                                    setConfirmAction({
+                                      responseId: response.id,
+                                      status: 'rejected',
+                                    })
+                                  }
                                   className="text-xs gap-1 h-8"
                                 >
                                   <XCircle className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Reject</span>
+                                  <span className="hidden sm:inline">
+                                    Reject
+                                  </span>
                                 </Button>
                               </>
                             )}
@@ -806,9 +967,9 @@ export function AdminResponsesTab({
             <CardContent className="p-6 sm:p-8 text-center">
               <BarChart3 className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground text-sm sm:text-base">
-                {searchTerm || statusFilter !== "all"
-                  ? "No responses match your filters"
-                  : "No responses yet"}
+                {searchTerm || statusFilter !== 'all'
+                  ? 'No responses match your filters'
+                  : 'No responses yet'}
               </p>
             </CardContent>
           </Card>
@@ -825,10 +986,13 @@ export function AdminResponsesTab({
               <div className="flex items-center justify-center">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full">
                   <span className="text-xs font-medium text-muted-foreground">
-                    {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)}
+                    {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–
+                    {Math.min(currentPage * pageSize, totalCount)}
                   </span>
                   <span className="text-xs text-muted-foreground/60">of</span>
-                  <span className="text-xs font-semibold text-foreground">{totalCount}</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    {totalCount}
+                  </span>
                 </div>
               </div>
 
@@ -842,8 +1006,18 @@ export function AdminResponsesTab({
                   disabled={currentPage === 1}
                   className="hidden sm:flex h-9 w-9 p-0 border-border hover:bg-accent"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                    />
                   </svg>
                 </Button>
 
@@ -855,8 +1029,18 @@ export function AdminResponsesTab({
                   disabled={currentPage === 1}
                   className="h-9 px-3 gap-1.5 border-border hover:bg-accent"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                   <span className="hidden sm:inline text-sm">Previous</span>
                 </Button>
@@ -884,19 +1068,23 @@ export function AdminResponsesTab({
 
                     return pages.map((page, idx) =>
                       page === 'ellipsis' ? (
-                        <span key={`ellipsis-${idx}`} className="w-9 h-9 flex items-center justify-center text-muted-foreground">
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="w-9 h-9 flex items-center justify-center text-muted-foreground"
+                        >
                           ···
                         </span>
                       ) : (
                         <Button
                           key={page}
-                          variant={currentPage === page ? "default" : "outline"}
+                          variant={currentPage === page ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => onPageChange(page)}
-                          className={`h-9 w-9 p-0 text-sm font-medium transition-all ${currentPage === page
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "border-border hover:bg-accent hover:border-accent-foreground/20"
-                            }`}
+                          className={`h-9 w-9 p-0 text-sm font-medium transition-all ${
+                            currentPage === page
+                              ? 'bg-primary text-primary-foreground shadow-md'
+                              : 'border-border hover:bg-accent hover:border-accent-foreground/20'
+                          }`}
                         >
                           {page}
                         </Button>
@@ -914,8 +1102,18 @@ export function AdminResponsesTab({
                   className="h-9 px-3 gap-1.5 border-border hover:bg-accent"
                 >
                   <span className="hidden sm:inline text-sm">Next</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </Button>
 
@@ -927,8 +1125,18 @@ export function AdminResponsesTab({
                   disabled={currentPage >= Math.ceil(totalCount / pageSize)}
                   className="hidden sm:flex h-9 w-9 p-0 border-border hover:bg-accent"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    />
                   </svg>
                 </Button>
               </div>
@@ -938,31 +1146,46 @@ export function AdminResponsesTab({
       )}
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+      <AlertDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+      >
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-2 ${confirmAction?.status === 'accepted' ? 'bg-green-100' : 'bg-red-100'
-              }`}>
-              {confirmAction?.status === 'accepted'
-                ? <CheckCircle className="w-6 h-6 text-green-600" />
-                : <XCircle className="w-6 h-6 text-red-600" />
-              }
+            <div
+              className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                confirmAction?.status === 'accepted'
+                  ? 'bg-green-100'
+                  : 'bg-red-100'
+              }`}
+            >
+              {confirmAction?.status === 'accepted' ? (
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-600" />
+              )}
             </div>
             <AlertDialogTitle className="text-center">
-              {confirmAction?.status === 'accepted' ? 'Accept' : 'Reject'} this recording?
+              {confirmAction?.status === 'accepted' ? 'Accept' : 'Reject'} this
+              recording?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              Are you sure you want to {confirmAction?.status === 'accepted' ? 'accept' : 'reject'} this recording? This action can be changed later.
+              Are you sure you want to{' '}
+              {confirmAction?.status === 'accepted' ? 'accept' : 'reject'} this
+              recording? This action can be changed later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="w-full sm:w-auto">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmAction}
-              className={`w-full sm:w-auto ${confirmAction?.status === 'accepted'
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-red-500 hover:bg-red-600 text-white'
-                }`}
+              className={`w-full sm:w-auto ${
+                confirmAction?.status === 'accepted'
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
             >
               {confirmAction?.status === 'accepted' ? 'Accept' : 'Reject'}
             </AlertDialogAction>

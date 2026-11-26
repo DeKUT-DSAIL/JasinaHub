@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Pencil, Check, X } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Pencil, Check, X } from 'lucide-react';
 
 interface ProfileDialogProps {
   open: boolean;
@@ -24,15 +24,15 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const [updatingPhone, setUpdatingPhone] = useState(false);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [profile, setProfile] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
     phoneNumberUpdated: false,
   });
-  const [newPhoneNumber, setNewPhoneNumber] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPhoneNumber, setNewPhoneNumber] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,12 +44,16 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
 
   const loadProfile = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (user) {
       const { data } = await supabase
         .from('profiles')
-        .select('first_name, last_name, email, phone_number, phone_number_updated')
+        .select(
+          'first_name, last_name, email, phone_number, phone_number_updated'
+        )
         .eq('id', user.id)
         .single();
 
@@ -70,9 +74,9 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const handleUpdatePhoneNumber = async () => {
     if (!newPhoneNumber.trim()) {
       toast({
-        title: "Error",
-        description: "Phone number cannot be empty",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Phone number cannot be empty',
+        variant: 'destructive',
       });
       return;
     }
@@ -83,29 +87,31 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
     }
 
     setUpdatingPhone(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (user) {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           phone_number: newPhoneNumber.trim(),
-          phone_number_updated: true 
+          phone_number_updated: true,
         })
         .eq('id', user.id);
 
       if (error) {
         toast({
-          title: "Error",
+          title: 'Error',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
       } else {
         toast({
-          title: "Success",
-          description: "Phone number updated successfully",
+          title: 'Success',
+          description: 'Phone number updated successfully',
         });
-        setProfile(prev => ({
+        setProfile((prev) => ({
           ...prev,
           phoneNumber: newPhoneNumber.trim(),
           phoneNumberUpdated: true,
@@ -124,18 +130,18 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
       });
       return;
     }
 
     if (newPassword.length < 6) {
       toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Password must be at least 6 characters',
+        variant: 'destructive',
       });
       return;
     }
@@ -147,17 +153,17 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
 
     if (error) {
       toast({
-        title: "Error",
+        title: 'Error',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } else {
       toast({
-        title: "Success",
-        description: "Password updated successfully",
+        title: 'Success',
+        description: 'Password updated successfully',
       });
-      setNewPassword("");
-      setConfirmPassword("");
+      setNewPassword('');
+      setConfirmPassword('');
     }
     setUpdatingPassword(false);
   };
@@ -183,17 +189,23 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">First Name</Label>
-                  <p className="mt-1 text-sm text-muted-foreground">{profile.firstName}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {profile.firstName}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Last Name</Label>
-                  <p className="mt-1 text-sm text-muted-foreground">{profile.lastName}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {profile.lastName}
+                  </p>
                 </div>
               </div>
 
               <div>
                 <Label className="text-sm font-medium">Email Address</Label>
-                <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {profile.email}
+                </p>
               </div>
 
               <div>
@@ -216,7 +228,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
                     </span>
                   )}
                 </div>
-                
+
                 {isEditingPhone ? (
                   <div className="mt-1 flex items-center gap-2">
                     <Input
@@ -249,7 +261,9 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
                     </Button>
                   </div>
                 ) : (
-                  <p className="mt-1 text-sm text-muted-foreground">{profile.phoneNumber}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {profile.phoneNumber}
+                  </p>
                 )}
               </div>
             </div>
@@ -257,7 +271,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
             {/* Password Change Section */}
             <div className="border-t pt-6 space-y-4">
               <h3 className="text-sm font-semibold">Change Password</h3>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <Input
@@ -291,7 +305,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
                     Updating...
                   </>
                 ) : (
-                  "Update Password"
+                  'Update Password'
                 )}
               </Button>
             </div>

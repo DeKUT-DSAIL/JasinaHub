@@ -9,7 +9,7 @@ interface SavedRecording {
   };
 }
 
-const STORAGE_KEY = "pending_recordings";
+const STORAGE_KEY = 'pending_recordings';
 const MAX_RECORDING_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -29,7 +29,10 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 };
 
 // Convert base64 to Blob
-const base64ToBlob = (base64: string, mimeType: string = 'audio/webm'): Blob => {
+const base64ToBlob = (
+  base64: string,
+  mimeType: string = 'audio/webm'
+): Blob => {
   const byteCharacters = atob(base64);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -45,24 +48,27 @@ const getAllRecordings = (): Record<string, SavedRecording> => {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (error) {
-    console.error("Error reading recordings from localStorage:", error);
+    console.error('Error reading recordings from localStorage:', error);
     return {};
   }
 };
 
 // Save all recordings
-const saveAllRecordings = (recordings: Record<string, SavedRecording>): boolean => {
+const saveAllRecordings = (
+  recordings: Record<string, SavedRecording>
+): boolean => {
   try {
     const data = JSON.stringify(recordings);
     // Check if we're approaching localStorage limit
-    if (data.length > 9 * 1024 * 1024) { // 9MB limit
-      console.warn("Approaching localStorage limit");
+    if (data.length > 9 * 1024 * 1024) {
+      // 9MB limit
+      console.warn('Approaching localStorage limit');
       return false;
     }
     localStorage.setItem(STORAGE_KEY, data);
     return true;
   } catch (error) {
-    console.error("Error saving recordings to localStorage:", error);
+    console.error('Error saving recordings to localStorage:', error);
     return false;
   }
 };
@@ -77,7 +83,7 @@ export const saveRecordingLocally = async (
   try {
     // Check blob size
     if (audioBlob.size > MAX_RECORDING_SIZE) {
-      console.warn("Recording too large to save locally");
+      console.warn('Recording too large to save locally');
       return false;
     }
 
@@ -94,13 +100,15 @@ export const saveRecordingLocally = async (
 
     return saveAllRecordings(recordings);
   } catch (error) {
-    console.error("Error saving recording locally:", error);
+    console.error('Error saving recording locally:', error);
     return false;
   }
 };
 
 // Get specific recording
-export const getLocalRecording = (questionId: string): { blob: Blob; duration: number } | null => {
+export const getLocalRecording = (
+  questionId: string
+): { blob: Blob; duration: number } | null => {
   try {
     const recordings = getAllRecordings();
     const recording = recordings[questionId];
@@ -110,7 +118,7 @@ export const getLocalRecording = (questionId: string): { blob: Blob; duration: n
     const blob = base64ToBlob(recording.audioData);
     return { blob, duration: recording.duration };
   } catch (error) {
-    console.error("Error retrieving recording:", error);
+    console.error('Error retrieving recording:', error);
     return null;
   }
 };
@@ -122,7 +130,7 @@ export const clearLocalRecording = (questionId: string): boolean => {
     delete recordings[questionId];
     return saveAllRecordings(recordings);
   } catch (error) {
-    console.error("Error clearing recording:", error);
+    console.error('Error clearing recording:', error);
     return false;
   }
 };
@@ -154,13 +162,17 @@ export const clearOldRecordings = (): number => {
 
     return cleared;
   } catch (error) {
-    console.error("Error clearing old recordings:", error);
+    console.error('Error clearing old recordings:', error);
     return 0;
   }
 };
 
 // Get storage usage info
-export const getStorageInfo = (): { used: number; total: number; recordings: number } => {
+export const getStorageInfo = (): {
+  used: number;
+  total: number;
+  recordings: number;
+} => {
   try {
     const recordings = getAllRecordings();
     const data = JSON.stringify(recordings);

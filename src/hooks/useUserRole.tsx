@@ -1,7 +1,7 @@
 // Thin backwards-compatible wrapper over the unified AuthProvider context.
-// Prefer importing `useAuth` from `@/components/Auth/AuthProvider` directly
+// Prefer importing `useAuth` from `@/hooks/useAuth` directly
 // in new code.
-import { useAuth } from "@/components/Auth/AuthProvider";
+import { useAuth } from '@/hooks/useAuth';
 
 export const useUserRole = () => {
   const { isAdmin, loading } = useAuth();

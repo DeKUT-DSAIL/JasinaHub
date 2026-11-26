@@ -1,7 +1,14 @@
-import { AlertCircle, Upload, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Upload, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface PendingRecording {
   questionId: string;
@@ -35,16 +42,20 @@ export const RecoveryDialog = ({
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60)
+      return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     return date.toLocaleDateString();
   };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `${secs}s`;
+    return mins > 0
+      ? `${mins}:${secs.toString().padStart(2, '0')}`
+      : `${secs}s`;
   };
 
   return (
@@ -56,8 +67,10 @@ export const RecoveryDialog = ({
             <DialogTitle>Unsaved Recordings Found</DialogTitle>
           </div>
           <DialogDescription>
-            We found {pendingRecordings.length} recording{pendingRecordings.length > 1 ? "s" : ""} that{" "}
-            {pendingRecordings.length > 1 ? "weren't" : "wasn't"} uploaded. Would you like to resume uploading?
+            We found {pendingRecordings.length} recording
+            {pendingRecordings.length > 1 ? 's' : ''} that{' '}
+            {pendingRecordings.length > 1 ? "weren't" : "wasn't"} uploaded.
+            Would you like to resume uploading?
           </DialogDescription>
         </DialogHeader>
 
@@ -68,12 +81,16 @@ export const RecoveryDialog = ({
               className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{recording.metadata.questionText}</p>
+                <p className="font-medium text-sm truncate">
+                  {recording.metadata.questionText}
+                </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="text-xs">
                     {formatDuration(recording.duration)}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">{formatTimestamp(recording.timestamp)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatTimestamp(recording.timestamp)}
+                  </span>
                 </div>
               </div>
 

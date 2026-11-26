@@ -1,4 +1,5 @@
-export type TestStatus = "pending" | "running" | "passed" | "failed" | "skipped";
+export type TestStatus =
+  'pending' | 'running' | 'passed' | 'failed' | 'skipped';
 
 export interface TestCase {
   id: string;
@@ -27,7 +28,7 @@ export interface TestResult {
 export class AssertionError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "AssertionError";
+    this.name = 'AssertionError';
   }
 }
 
@@ -38,7 +39,7 @@ export function assert(cond: unknown, msg: string): asserts cond {
 export function assertEqual<T>(actual: T, expected: T, msg?: string) {
   if (actual !== expected) {
     throw new AssertionError(
-      `${msg ?? "values not equal"} — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`
+      `${msg ?? 'values not equal'} — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`
     );
   }
 }

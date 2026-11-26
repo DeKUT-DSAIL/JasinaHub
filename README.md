@@ -35,11 +35,11 @@ The platform operates across three integrated user roles:
 
 ## Tech Stack
 
-| Layer | Technologies |
-|---|---|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router v6, TanStack Query, Recharts |
-| **Backend & Database** | PostgreSQL, Supabase Auth, Row-Level Security (RLS), Supabase Storage, Deno Edge Functions |
-| **Mobile & Offline** | Progressive Web App (PWA), Service Workers, IndexedDB local fallback queue |
+| Layer                  | Technologies                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| **Frontend**           | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router v6, TanStack Query, Recharts |
+| **Backend & Database** | PostgreSQL, Supabase Auth, Row-Level Security (RLS), Supabase Storage, Deno Edge Functions     |
+| **Mobile & Offline**   | Progressive Web App (PWA), Service Workers, IndexedDB local fallback queue                     |
 
 ---
 
@@ -50,6 +50,7 @@ The platform operates across three integrated user roles:
 JasinaHub requires **Node.js 18+** (or Bun 1.x) and **npm**. Follow the installation instructions for your operating system:
 
 #### Windows
+
 - **Installer (Recommended):** Download and run the Windows Installer (.msi) from [nodejs.org](https://nodejs.org/).
 - **Winget:** Run the following command in PowerShell:
   ```powershell
@@ -57,6 +58,7 @@ JasinaHub requires **Node.js 18+** (or Bun 1.x) and **npm**. Follow the installa
   ```
 
 #### macOS
+
 - **Installer (Recommended):** Download and run the macOS Installer (.pkg) from [nodejs.org](https://nodejs.org/).
 - **Homebrew:**
   ```bash
@@ -64,6 +66,7 @@ JasinaHub requires **Node.js 18+** (or Bun 1.x) and **npm**. Follow the installa
   ```
 
 #### Linux
+
 - **Ubuntu / Debian:**
   ```bash
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -79,7 +82,9 @@ JasinaHub requires **Node.js 18+** (or Bun 1.x) and **npm**. Follow the installa
   ```
 
 #### Verify Installation
+
 Confirm that Node.js and npm are installed:
+
 ```bash
 node -v   # Expected: v18.0.0 or higher
 npm -v    # Expected: v9.0.0 or higher
@@ -122,13 +127,14 @@ All your local commits and pushes (`git push origin main`) will publish directly
 <summary><b>View Database Components Initialized by the Script</b></summary>
 
 The one-click setup script is fully idempotent and provisions the complete backend:
+
 - **Custom Enums:** `app_role` (`admin`, `user`) and `response_status` (`pending`, `accepted`, `rejected`).
 - **Core Relational Tables:** `profiles`, `user_roles`, `categories`, `category_access_requests`, `questions`, `voice_responses`, `transcriptions`, `transcription_locks`, `user_progress`, `user_activity_logs`, `site_content`, `feedback_questions`, `feedback_submissions`, `feedback_answers`, `password_reset_codes`.
 - **Database Triggers:** Automated profile provisioning hook on `auth.users` (`handle_new_user`) and anonymous pseudonym generator (`set_profile_pseudonym`).
 - **Stored Procedures (RPCs):** `has_role`, atomic locking procedure `claim_random_transcription`, `release_transcription_lock`, `get_question_counts`, `get_admin_chart_data`, and `get_transcription_stats`.
 - **Row-Level Security (RLS) & Grants:** Enforced access boundaries with grants to `authenticated`, `anon`, and `service_role`.
 - **Storage Buckets:** `voice-recordings` (public audio streaming) and `images` (question illustrations).
-- **Starter Seed Data:** Default categories (*General Health*, *Nutrition*, *Maternal Health*), sample health prompts, rating questions, and default site content keys (`consent_form`, `privacy_policy`).
+- **Starter Seed Data:** Default categories (_General Health_, _Nutrition_, _Maternal Health_), sample health prompts, rating questions, and default site content keys (`consent_form`, `privacy_policy`).
 
 > **Upgrading an existing database?** If you have an existing database instance from a previous version, run [`supabase/migrations/add_site_content.sql`](supabase/migrations/add_site_content.sql) in your Supabase SQL Editor to add the `site_content` table, RLS policies, and seed rows without recreating your database.
 
@@ -206,7 +212,7 @@ When testing or deploying JasinaHub for speech data collection:
 - **Microphone Permissions & Secure Context:**
   - Modern web browsers enforce strict security for audio recording (`navigator.mediaDevices.getUserMedia`). Audio capture is **only permitted in a Secure Context** (`https://` or `http://localhost`).
   - **Local Mobile Testing:** When testing on physical mobile phones over a local Wi-Fi network (e.g. `http://192.168.1.X:8080`), mobile browsers flag the plain IP address as an insecure context and block microphone access without showing a permission prompt.
-    - *Recommended solutions for local mobile testing:*
+    - _Recommended solutions for local mobile testing:_
       - **Android USB Debugging:** Connect via USB and run `adb reverse tcp:8080 tcp:8080`, then open `http://localhost:8080` in Chrome on Android.
       - **HTTPS Tunnel:** Use Cloudflare Tunnels (`cloudflared tunnel --url http://localhost:8080`) or ngrok to access via a secure `https://` URL.
       - **Production Deploy:** Deploy to Vercel or Netlify, where HTTPS is automatic.
@@ -497,6 +503,7 @@ journey
 <summary><b>Core Database Tables & RPC Procedures</b></summary>
 
 #### Primary Tables
+
 - `profiles` — User demographics, consent timestamps, verification flags, and pseudonym (`JSN-XXXX`).
 - `user_roles` — Role-based access control (`admin`, `user`).
 - `categories` & `questions` — Thematic question groupings and prompts.
@@ -507,13 +514,14 @@ journey
 - `feedback_*` — Dynamic user experience survey questions, submissions, and answers.
 
 #### Core RPC Stored Procedures
+
 - `claim_random_transcription(_user_id)` — Atomically claims untranscribed recordings with TTL lock.
 - `release_transcription_lock(_user_id)` — Releases active claim locks.
 - `has_role(_user_id, _role)` — Security definer function used inside RLS policies.
 - `get_question_counts()` — Counts responses per question to retire prompts after 3 contributions.
 - `get_admin_chart_data()` & `get_transcription_stats()` — Aggregated analytics for admin dashboards.
 
-*For the complete schema, policies, and SQL code, see the [Database Guide](docs/DATABASE.md) and [`supabase/setup_complete.sql`](supabase/setup_complete.sql).*
+_For the complete schema, policies, and SQL code, see the [Database Guide](docs/DATABASE.md) and [`supabase/setup_complete.sql`](supabase/setup_complete.sql)._
 
 </details>
 

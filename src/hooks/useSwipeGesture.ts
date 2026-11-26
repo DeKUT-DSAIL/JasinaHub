@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback } from 'react';
 
 interface SwipeHandlers {
   onTouchStart: (e: React.TouchEvent) => void;
@@ -28,21 +28,27 @@ export const useSwipeGesture = ({
   const [touchEnd, setTouchEnd] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
 
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!enabled) return;
-    setTouchEnd(0);
-    setTouchStart(e.targetTouches[0].clientX);
-  }, [enabled]);
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!enabled) return;
+      setTouchEnd(0);
+      setTouchStart(e.targetTouches[0].clientX);
+    },
+    [enabled]
+  );
 
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!enabled) return;
-    const currentTouch = e.targetTouches[0].clientX;
-    setTouchEnd(currentTouch);
-    
-    // Calculate offset for visual feedback (capped at ±100px)
-    const offset = currentTouch - touchStart;
-    setSwipeOffset(Math.max(-100, Math.min(100, offset / 3)));
-  }, [enabled, touchStart]);
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!enabled) return;
+      const currentTouch = e.targetTouches[0].clientX;
+      setTouchEnd(currentTouch);
+
+      // Calculate offset for visual feedback (capped at ±100px)
+      const offset = currentTouch - touchStart;
+      setSwipeOffset(Math.max(-100, Math.min(100, offset / 3)));
+    },
+    [enabled, touchStart]
+  );
 
   const onTouchEnd = useCallback(() => {
     if (!enabled || !touchStart || !touchEnd) {
@@ -64,7 +70,14 @@ export const useSwipeGesture = ({
     setSwipeOffset(0);
     setTouchStart(0);
     setTouchEnd(0);
-  }, [enabled, touchStart, touchEnd, minSwipeDistance, onSwipeLeft, onSwipeRight]);
+  }, [
+    enabled,
+    touchStart,
+    touchEnd,
+    minSwipeDistance,
+    onSwipeLeft,
+    onSwipeRight,
+  ]);
 
   return {
     handlers: {

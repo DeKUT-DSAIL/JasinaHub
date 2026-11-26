@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Mic, Shield, BarChart3 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Mic, Shield, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   return (
@@ -14,8 +14,9 @@ const Index = () => {
               <span className="block text-primary">Made Simple</span>
             </h1>
             <p className="text-xl text-muted-foreground font-inter mb-8 max-w-3xl mx-auto leading-relaxed">
-              Collect high-quality voice responses through an intuitive platform. 
-              Perfect for research, surveys, and data collection with seamless voice recording.
+              Collect high-quality voice responses through an intuitive
+              platform. Perfect for research, surveys, and data collection with
+              seamless voice recording.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/signup">
@@ -25,7 +26,11 @@ const Index = () => {
                 </Button>
               </Link>
               <Link to="/login">
-                <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-8 py-6"
+                >
                   Sign In
                 </Button>
               </Link>
@@ -45,7 +50,7 @@ const Index = () => {
               Everything you need for professional voice data collection
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="glass-card p-8 rounded-3xl text-center group hover:scale-105 transition-all duration-300">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
@@ -55,7 +60,8 @@ const Index = () => {
                 Voice Recording
               </h3>
               <p className="text-muted-foreground font-inter">
-                High-quality voice recording with real-time feedback and easy playback options.
+                High-quality voice recording with real-time feedback and easy
+                playback options.
               </p>
             </div>
 
@@ -67,7 +73,8 @@ const Index = () => {
                 Secure Storage
               </h3>
               <p className="text-muted-foreground font-inter">
-                Your voice data is securely stored with enterprise-grade encryption and privacy protection.
+                Your voice data is securely stored with enterprise-grade
+                encryption and privacy protection.
               </p>
             </div>
 
@@ -79,7 +86,8 @@ const Index = () => {
                 Progress Tracking
               </h3>
               <p className="text-muted-foreground font-inter">
-                Track completion rates and resume where you left off with intelligent checkpoints.
+                Track completion rates and resume where you left off with
+                intelligent checkpoints.
               </p>
             </div>
           </div>

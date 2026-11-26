@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Shield, Mic2, UserCheck } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Shield, Mic2, UserCheck } from 'lucide-react';
 
 interface ConsentModalProps {
   onAgree: () => void;
@@ -7,7 +7,11 @@ interface ConsentModalProps {
   isVisible: boolean;
 }
 
-export function ConsentModal({ onAgree, onDecline, isVisible }: ConsentModalProps) {
+export function ConsentModal({
+  onAgree,
+  onDecline,
+  isVisible,
+}: ConsentModalProps) {
   if (!isVisible) return null;
 
   return (
@@ -17,10 +21,13 @@ export function ConsentModal({ onAgree, onDecline, isVisible }: ConsentModalProp
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-blue-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto shadow-lg">
             <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Voice Recording Consent</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+            Voice Recording Consent
+          </h2>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            We need your permission to record voice responses. Your recordings will be used 
-            to improve healthcare services and will be stored securely.
+            We need your permission to record voice responses. Your recordings
+            will be used to improve healthcare services and will be stored
+            securely.
           </p>
         </div>
 
@@ -28,15 +35,21 @@ export function ConsentModal({ onAgree, onDecline, isVisible }: ConsentModalProp
           <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
             <Mic2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-slate-900 text-sm">Audio Recording</p>
-              <p className="text-slate-600 text-xs">Your voice responses will be recorded and stored</p>
+              <p className="font-medium text-slate-900 text-sm">
+                Audio Recording
+              </p>
+              <p className="text-slate-600 text-xs">
+                Your voice responses will be recorded and stored
+              </p>
             </div>
           </div>
           <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
             <UserCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-slate-900 text-sm">Data Privacy</p>
-              <p className="text-slate-600 text-xs">Your data is encrypted and handled securely</p>
+              <p className="text-slate-600 text-xs">
+                Your data is encrypted and handled securely
+              </p>
             </div>
           </div>
         </div>

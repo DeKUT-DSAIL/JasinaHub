@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Confetti } from "@/components/ui/confetti";
-import { 
-  CheckCircle, 
-  BarChart3, 
-  Clock, 
-  Home, 
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Confetti } from '@/components/ui/confetti';
+import {
+  CheckCircle,
+  BarChart3,
+  Clock,
+  Home,
   FileText,
   Award,
-  Sparkles
-} from "lucide-react";
+  Sparkles,
+} from 'lucide-react';
 
 interface CompletionStats {
   questionsAnswered: number;
@@ -23,7 +23,7 @@ export default function Completion() {
   const location = useLocation();
   const [showConfetti, setShowConfetti] = useState(true);
   const [animateStats, setAnimateStats] = useState(false);
-  
+
   // Get stats from navigation state or use defaults
   const stats: CompletionStats = location.state?.stats || {
     questionsAnswered: 0,
@@ -49,11 +49,11 @@ export default function Completion() {
   return (
     <div className="min-h-screen relative w-full bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4 overflow-hidden">
       {/* Confetti celebration */}
-      <Confetti 
-        active={showConfetti} 
-        particleCount={80} 
+      <Confetti
+        active={showConfetti}
+        particleCount={80}
         duration={4000}
-        onComplete={() => setShowConfetti(false)} 
+        onComplete={() => setShowConfetti(false)}
       />
 
       {/* Decorative background elements */}
@@ -67,7 +67,9 @@ export default function Completion() {
         <Card className="bg-card/80 backdrop-blur-md border-border/50 shadow-2xl overflow-hidden">
           <CardContent className="p-8 text-center">
             {/* Success Icon */}
-            <div className={`mx-auto mb-6 transition-all duration-700 ${animateStats ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
+            <div
+              className={`mx-auto mb-6 transition-all duration-700 ${animateStats ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+            >
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
                 <div className="relative w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto shadow-lg">
@@ -80,7 +82,9 @@ export default function Completion() {
             </div>
 
             {/* Title */}
-            <div className={`mb-6 transition-all duration-700 delay-100 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <div
+              className={`mb-6 transition-all duration-700 delay-100 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
+            >
               <h1 className="text-3xl font-bold text-foreground mb-2">
                 Assessment Complete!
               </h1>
@@ -90,7 +94,9 @@ export default function Completion() {
             </div>
 
             {/* Stats Grid */}
-            <div className={`grid grid-cols-2 gap-4 mb-8 transition-all duration-700 delay-200 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <div
+              className={`grid grid-cols-2 gap-4 mb-8 transition-all duration-700 delay-200 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
+            >
               <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
                 <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2">
                   <BarChart3 className="w-5 h-5 text-primary" />
@@ -98,9 +104,11 @@ export default function Completion() {
                 <p className="text-2xl font-bold text-foreground">
                   {stats.questionsAnswered}
                 </p>
-                <p className="text-sm text-muted-foreground">Questions Answered</p>
+                <p className="text-sm text-muted-foreground">
+                  Questions Answered
+                </p>
               </div>
-              
+
               <div className="bg-accent/5 rounded-2xl p-4 border border-accent/10">
                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center mx-auto mb-2">
                   <Clock className="w-5 h-5 text-accent-foreground" />
@@ -113,7 +121,9 @@ export default function Completion() {
             </div>
 
             {/* Achievement Badge */}
-            <div className={`mb-8 transition-all duration-700 delay-300 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <div
+              className={`mb-8 transition-all duration-700 delay-300 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
+            >
               <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 px-4 py-2 rounded-full border border-yellow-500/20">
                 <Award className="w-4 h-4" />
                 <span className="text-sm font-medium">Health Contributor</span>
@@ -121,16 +131,18 @@ export default function Completion() {
             </div>
 
             {/* CTA Buttons */}
-            <div className={`space-y-3 transition-all duration-700 delay-400 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-              <Button 
+            <div
+              className={`space-y-3 transition-all duration-700 delay-400 ${animateStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
+            >
+              <Button
                 onClick={() => navigate('/my-responses')}
                 className="w-full h-12 text-base gap-2"
               >
                 <FileText className="w-5 h-5" />
                 View My Responses
               </Button>
-              
-              <Button 
+
+              <Button
                 variant="outline"
                 onClick={() => navigate('/dashboard')}
                 className="w-full h-12 text-base gap-2"
@@ -143,7 +155,9 @@ export default function Completion() {
         </Card>
 
         {/* Footer note */}
-        <p className={`text-center text-sm text-muted-foreground mt-6 transition-all duration-700 delay-500 ${animateStats ? 'opacity-100' : 'opacity-0'}`}>
+        <p
+          className={`text-center text-sm text-muted-foreground mt-6 transition-all duration-700 delay-500 ${animateStats ? 'opacity-100' : 'opacity-0'}`}
+        >
           Your responses are securely stored and encrypted
         </p>
       </div>

@@ -42,7 +42,10 @@ export const AdminActiveUsersTab: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {activeUsers.map((user) => (
-          <Card key={user.id} className="p-4 bg-card border-green-500/20 shadow-sm transition-all hover:bg-accent/5">
+          <Card
+            key={user.id}
+            className="p-4 bg-card border-green-500/20 shadow-sm transition-all hover:bg-accent/5"
+          >
             <div className="flex items-start gap-3">
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-semibold">
@@ -55,12 +58,17 @@ export const AdminActiveUsersTab: React.FC = () => {
                 <p className="font-medium text-foreground truncate">
                   {user.first_name || user.last_name
                     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
-                    : (user.email || 'User ' + user.id.slice(0, 8))}
+                    : user.email || 'User ' + user.id.slice(0, 8)}
                 </p>
-                <p className="text-sm text-muted-foreground truncate">{user.email || "No email"}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {user.email || 'No email'}
+                </p>
 
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Badge
+                    variant="outline"
+                    className="text-xs flex items-center gap-1"
+                  >
                     <MapPin className="h-3 w-3" />
                     {getPageName(user.current_page)}
                   </Badge>
@@ -69,7 +77,10 @@ export const AdminActiveUsersTab: React.FC = () => {
                 <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   <span>
-                    Online {formatDistanceToNow(new Date(user.online_at), { addSuffix: true })}
+                    Online{' '}
+                    {formatDistanceToNow(new Date(user.online_at), {
+                      addSuffix: true,
+                    })}
                   </span>
                 </div>
               </div>
@@ -79,4 +90,4 @@ export const AdminActiveUsersTab: React.FC = () => {
       </div>
     </div>
   );
-}
+};

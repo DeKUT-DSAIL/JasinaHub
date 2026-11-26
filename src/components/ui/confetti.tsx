@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface ConfettiProps {
   active: boolean;
@@ -17,14 +17,19 @@ interface Particle {
 }
 
 const colors = [
-  "hsl(var(--primary))",
-  "hsl(var(--accent))",
-  "hsl(217, 91%, 60%)", // blue
-  "hsl(280, 89%, 65%)", // purple
-  "hsl(330, 81%, 60%)", // pink
+  'hsl(var(--primary))',
+  'hsl(var(--accent))',
+  'hsl(217, 91%, 60%)', // blue
+  'hsl(280, 89%, 65%)', // purple
+  'hsl(330, 81%, 60%)', // pink
 ];
 
-export const Confetti = ({ active, particleCount = 50, duration = 3000, onComplete }: ConfettiProps) => {
+export const Confetti = ({
+  active,
+  particleCount = 50,
+  duration = 3000,
+  onComplete,
+}: ConfettiProps) => {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
@@ -33,14 +38,17 @@ export const Confetti = ({ active, particleCount = 50, duration = 3000, onComple
       return;
     }
 
-    const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 500,
-      duration: 2000 + Math.random() * 1000,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: 4 + Math.random() * 8,
-    }));
+    const newParticles: Particle[] = Array.from(
+      { length: particleCount },
+      (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        delay: Math.random() * 500,
+        duration: 2000 + Math.random() * 1000,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 4 + Math.random() * 8,
+      })
+    );
 
     setParticles(newParticles);
 

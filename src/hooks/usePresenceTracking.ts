@@ -13,12 +13,19 @@ interface PresenceState {
 
 export const usePresenceTracking = () => {
   const location = useLocation();
-  const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
+  const [channel, setChannel] = useState<ReturnType<
+    typeof supabase.channel
+  > | null>(null);
 
   useEffect(() => {
+    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
+    let isCancelled = false;
+
     const setupPresence = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || isCancelled) return;
 
       // Get user profile for display name
       const { data: profile } = await supabase
@@ -26,6 +33,7 @@ export const usePresenceTracking = () => {
         .select('first_name, last_name, email')
         .eq('id', user.id)
         .single();
+      if (isCancelled) return;
 
       const presenceChannel = supabase.channel('online-users', {
         config: {
@@ -42,20 +50,22 @@ export const usePresenceTracking = () => {
             email: profile?.email || user.email || '',
             first_name: profile?.first_name || '',
             last_name: profile?.last_name || '',
-            current_page: location.pathname,
+            current_page: window.location.pathname,
             online_at: new Date().toISOString(),
           });
         }
       });
 
+      currentChannel = presenceChannel;
       setChannel(presenceChannel);
     };
 
     setupPresence();
 
     return () => {
-      if (channel) {
-        channel.unsubscribe();
+      isCancelled = true;
+      if (currentChannel) {
+        currentChannel.unsubscribe();
       }
     };
   }, []);
@@ -65,7 +75,9 @@ export const usePresenceTracking = () => {
     const updatePresence = async () => {
       if (!channel) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile } = await supabase
@@ -105,12 +117,12 @@ export const useActiveUsers = () => {
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const users: PresenceState[] = [];
-        
+
         // Extract all presence data from state
         Object.entries(state).forEach(([key, presences]) => {
           // Skip the admin-viewer key (that's us watching)
           if (key === 'admin-viewer') return;
-          
+
           (presences as any[]).forEach((presence) => {
             // Only add if we have valid user data
             if (presence.id && presence.email) {
@@ -118,16 +130,19 @@ export const useActiveUsers = () => {
             }
           });
         });
-        
+
         // Remove duplicates by user id (keep latest)
         const uniqueUsers = users.reduce((acc, user) => {
-          const existing = acc.find(u => u.id === user.id);
-          if (!existing || new Date(user.online_at) > new Date(existing.online_at)) {
-            return [...acc.filter(u => u.id !== user.id), user];
+          const existing = acc.find((u) => u.id === user.id);
+          if (
+            !existing ||
+            new Date(user.online_at) > new Date(existing.online_at)
+          ) {
+            return [...acc.filter((u) => u.id !== user.id), user];
           }
           return acc;
         }, [] as PresenceState[]);
-        
+
         setActiveUsers(uniqueUsers);
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {

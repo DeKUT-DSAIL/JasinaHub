@@ -1,7 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { BookOpen, Server, Shield, Database, Activity, GitBranch, Users, ArrowRightLeft, Network } from "lucide-react";
-import { InteractiveMermaidDiagram } from "./ResearchPaper/InteractiveMermaidDiagram";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  BookOpen,
+  Server,
+  Shield,
+  Database,
+  Activity,
+  GitBranch,
+  Users,
+  ArrowRightLeft,
+  Network,
+} from 'lucide-react';
+import { InteractiveMermaidDiagram } from './ResearchPaper/InteractiveMermaidDiagram';
 import {
   useCaseDiagram,
   recordingSequenceDiagram,
@@ -9,7 +19,7 @@ import {
   erDiagram,
   componentDiagram,
   highLevelArchitectureDiagram,
-} from "./ResearchPaper/diagramDefinitions";
+} from './ResearchPaper/diagramDefinitions';
 
 export function AdminDocumentationTab() {
   return (
@@ -27,7 +37,9 @@ export function AdminDocumentationTab() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Core</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                    Core
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">React 18</Badge>
                     <Badge variant="secondary">Vite</Badge>
@@ -35,7 +47,9 @@ export function AdminDocumentationTab() {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Backend</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                    Backend
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">Supabase</Badge>
                     <Badge variant="secondary">PostgreSQL</Badge>
@@ -43,7 +57,9 @@ export function AdminDocumentationTab() {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">UI & Styling</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                    UI & Styling
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">Tailwind CSS</Badge>
                     <Badge variant="secondary">Shadcn UI</Badge>
@@ -62,11 +78,23 @@ export function AdminDocumentationTab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none">
-              <p>The system implements <strong>Role-Based Access Control</strong> through Supabase Auth and Database Triggers.</p>
+              <p>
+                The system implements <strong>Role-Based Access Control</strong>{' '}
+                through Supabase Auth and Database Triggers.
+              </p>
               <ul className="text-xs space-y-1 pl-4">
-                <li><strong>Admin:</strong> Full access to all data and verification workflows.</li>
-                <li><strong>Transcriber:</strong> Access to audio files and transcription creation.</li>
-                <li><strong>Volunteer:</strong> Limited to profile management and answer recording.</li>
+                <li>
+                  <strong>Admin:</strong> Full access to all data and
+                  verification workflows.
+                </li>
+                <li>
+                  <strong>Transcriber:</strong> Access to audio files and
+                  transcription creation.
+                </li>
+                <li>
+                  <strong>Volunteer:</strong> Limited to profile management and
+                  answer recording.
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -84,12 +112,17 @@ export function AdminDocumentationTab() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                End-to-end view of JasinaHub — from end users (Volunteers, Transcribers, Admins),
-                through the React PWA frontend and Lovable Cloud backend (Auth, PostgreSQL with RLS,
-                Object Storage, Edge Functions, Realtime), down to the curated ASR dataset that feeds
-                downstream speech model training (wav2vec 2.0, Whisper, MMS).
+                End-to-end view of JasinaHub — from end users (Volunteers,
+                Transcribers, Admins), through the React PWA frontend and
+                Lovable Cloud backend (Auth, PostgreSQL with RLS, Object
+                Storage, Edge Functions, Realtime), down to the curated ASR
+                dataset that feeds downstream speech model training (wav2vec
+                2.0, Whisper, MMS).
               </p>
-              <InteractiveMermaidDiagram chart={highLevelArchitectureDiagram} title="High-Level System Architecture" />
+              <InteractiveMermaidDiagram
+                chart={highLevelArchitectureDiagram}
+                title="High-Level System Architecture"
+              />
             </CardContent>
           </Card>
 
@@ -103,9 +136,13 @@ export function AdminDocumentationTab() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Shows the three actor roles (Volunteer, Transcriber, Admin) and their interactions with the system.
+                Shows the three actor roles (Volunteer, Transcriber, Admin) and
+                their interactions with the system.
               </p>
-              <InteractiveMermaidDiagram chart={useCaseDiagram} title="Use Case Diagram" />
+              <InteractiveMermaidDiagram
+                chart={useCaseDiagram}
+                title="Use Case Diagram"
+              />
             </CardContent>
           </Card>
 
@@ -118,9 +155,13 @@ export function AdminDocumentationTab() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Layered architecture from the React SPA client through the BaaS backend to ASR dataset output.
+                Layered architecture from the React SPA client through the BaaS
+                backend to ASR dataset output.
               </p>
-              <InteractiveMermaidDiagram chart={componentDiagram} title="Component & Deployment Architecture" />
+              <InteractiveMermaidDiagram
+                chart={componentDiagram}
+                title="Component & Deployment Architecture"
+              />
             </CardContent>
           </Card>
 
@@ -133,9 +174,14 @@ export function AdminDocumentationTab() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                The recording pipeline from category selection through audio capture, IndexedDB backup, cloud upload, and database persistence.
+                The recording pipeline from category selection through audio
+                capture, IndexedDB backup, cloud upload, and database
+                persistence.
               </p>
-              <InteractiveMermaidDiagram chart={recordingSequenceDiagram} title="Voice Recording Sequence" />
+              <InteractiveMermaidDiagram
+                chart={recordingSequenceDiagram}
+                title="Voice Recording Sequence"
+              />
             </CardContent>
           </Card>
 
@@ -148,9 +194,13 @@ export function AdminDocumentationTab() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Atomic locking mechanism for transcription claiming and submission with pessimistic locking.
+                Atomic locking mechanism for transcription claiming and
+                submission with pessimistic locking.
               </p>
-              <InteractiveMermaidDiagram chart={transcriptionSequenceDiagram} title="Transcription Assignment Sequence" />
+              <InteractiveMermaidDiagram
+                chart={transcriptionSequenceDiagram}
+                title="Transcription Assignment Sequence"
+              />
             </CardContent>
           </Card>
 
@@ -163,9 +213,13 @@ export function AdminDocumentationTab() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Complete database schema with all nine tables, their attributes, foreign key constraints, and cardinality relationships.
+                Complete database schema with all nine tables, their attributes,
+                foreign key constraints, and cardinality relationships.
               </p>
-              <InteractiveMermaidDiagram chart={erDiagram} title="Entity-Relationship Diagram" />
+              <InteractiveMermaidDiagram
+                chart={erDiagram}
+                title="Entity-Relationship Diagram"
+              />
             </CardContent>
           </Card>
 
@@ -177,19 +231,32 @@ export function AdminDocumentationTab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none">
-              <p>The project requires several environment variables for both the local development server and the Edge Functions:</p>
+              <p>
+                The project requires several environment variables for both the
+                local development server and the Edge Functions:
+              </p>
               <div className="grid grid-cols-1 gap-2 not-prose">
                 <div className="p-2 border border-border bg-muted/30 rounded flex items-center justify-between">
                   <span className="font-mono text-xs">VITE_SUPABASE_URL</span>
-                  <Badge variant="outline" className="text-[10px]">Required</Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    Required
+                  </Badge>
                 </div>
                 <div className="p-2 border border-border bg-muted/30 rounded flex items-center justify-between">
-                  <span className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</span>
-                  <Badge variant="outline" className="text-[10px]">Required</Badge>
+                  <span className="font-mono text-xs">
+                    VITE_SUPABASE_ANON_KEY
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    Required
+                  </Badge>
                 </div>
                 <div className="p-2 border border-border bg-muted/30 rounded flex items-center justify-between">
-                  <span className="font-mono text-xs">GOOGLE_DRIVE_FOLDER_ID</span>
-                  <Badge variant="outline" className="text-[10px]">Required (Edge)</Badge>
+                  <span className="font-mono text-xs">
+                    GOOGLE_DRIVE_FOLDER_ID
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    Required (Edge)
+                  </Badge>
                 </div>
               </div>
             </CardContent>
@@ -203,10 +270,21 @@ export function AdminDocumentationTab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none">
-              <p>The system uses a <strong>dual-mode</strong> Google Drive integration strategy:</p>
+              <p>
+                The system uses a <strong>dual-mode</strong> Google Drive
+                integration strategy:
+              </p>
               <ul className="text-xs space-y-1">
-                <li><strong>Direct Upload (GIS):</strong> Volunteers upload recordings directly from the browser using Google Identity Services (OAuth2).</li>
-                <li><strong>Migration (Edge):</strong> Administrative batches can be "ferried" between storage buckets using specialized <strong>Edge Functions</strong> for archival.</li>
+                <li>
+                  <strong>Direct Upload (GIS):</strong> Volunteers upload
+                  recordings directly from the browser using Google Identity
+                  Services (OAuth2).
+                </li>
+                <li>
+                  <strong>Migration (Edge):</strong> Administrative batches can
+                  be "ferried" between storage buckets using specialized{' '}
+                  <strong>Edge Functions</strong> for archival.
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -219,10 +297,21 @@ export function AdminDocumentationTab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none">
-              <p>To prevent data loss on unstable connections, the platform implements a robust recovery system:</p>
+              <p>
+                To prevent data loss on unstable connections, the platform
+                implements a robust recovery system:
+              </p>
               <ul className="text-xs space-y-1">
-                <li><strong>Local Storage:</strong> Recordings are saved to IndexedDB/LocalStorage via <code>recordingStorage.ts</code> before upload begins.</li>
-                <li><strong>Recovery Dialog:</strong> If an upload is interrupted, the <code>RecoveryDialog</code> automatically prompts the user to resume or retry upon their next visit.</li>
+                <li>
+                  <strong>Local Storage:</strong> Recordings are saved to
+                  IndexedDB/LocalStorage via <code>recordingStorage.ts</code>{' '}
+                  before upload begins.
+                </li>
+                <li>
+                  <strong>Recovery Dialog:</strong> If an upload is interrupted,
+                  the <code>RecoveryDialog</code> automatically prompts the user
+                  to resume or retry upon their next visit.
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -235,11 +324,31 @@ export function AdminDocumentationTab() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none">
-              <p>The frontend is optimized for a native-like experience through specialized hooks:</p>
+              <p>
+                The frontend is optimized for a native-like experience through
+                specialized hooks:
+              </p>
               <ul className="text-xs space-y-1">
-                <li><strong><code>useHapticFeedback</code>:</strong> Provides physical tactile responses for recording states and navigation.</li>
-                <li><strong><code>useSwipeGesture</code>:</strong> Allows intuitive swiping between assessment questions.</li>
-                <li><strong><code>usePullToRefresh</code>:</strong> A custom implementation for manual data syncing on mobile views.</li>
+                <li>
+                  <strong>
+                    <code>useHapticFeedback</code>:
+                  </strong>{' '}
+                  Provides physical tactile responses for recording states and
+                  navigation.
+                </li>
+                <li>
+                  <strong>
+                    <code>useSwipeGesture</code>:
+                  </strong>{' '}
+                  Allows intuitive swiping between assessment questions.
+                </li>
+                <li>
+                  <strong>
+                    <code>usePullToRefresh</code>:
+                  </strong>{' '}
+                  A custom implementation for manual data syncing on mobile
+                  views.
+                </li>
               </ul>
             </CardContent>
           </Card>

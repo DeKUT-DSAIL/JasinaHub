@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { WifiOff, Wifi, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from 'react';
+import { WifiOff, Wifi, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OfflineIndicatorProps {
   className?: string;
@@ -43,10 +43,8 @@ export const OfflineIndicator = ({ className }: OfflineIndicatorProps) => {
       role="alert"
       aria-live="polite"
       className={cn(
-        "fixed top-0 left-0 right-0 z-[100] px-4 py-3 flex items-center justify-center gap-3 text-sm font-medium transition-all duration-300 animate-slide-down",
-        isOnline 
-          ? "bg-emerald-500 text-white" 
-          : "bg-amber-500 text-amber-950",
+        'fixed top-0 left-0 right-0 z-[100] px-4 py-3 flex items-center justify-center gap-3 text-sm font-medium transition-all duration-300 animate-slide-down',
+        isOnline ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-amber-950',
         className
       )}
     >
@@ -64,8 +62,8 @@ export const OfflineIndicator = ({ className }: OfflineIndicatorProps) => {
       <button
         onClick={() => setShowBanner(false)}
         className={cn(
-          "ml-2 p-1 rounded-full transition-colors",
-          isOnline ? "hover:bg-emerald-600" : "hover:bg-amber-600"
+          'ml-2 p-1 rounded-full transition-colors',
+          isOnline ? 'hover:bg-emerald-600' : 'hover:bg-amber-600'
         )}
         aria-label="Dismiss notification"
       >

@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
-import { AuthLayout } from "@/components/Auth/AuthLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Mail, ArrowLeft, CheckCircle2, RotateCcw } from "lucide-react";
-import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
+import { useState, useEffect } from 'react';
+import { AuthLayout } from '@/components/Auth/AuthLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Mail, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
 
-const emailSchema = z.string().email("Please enter a valid email address");
+const emailSchema = z.string().email('Please enter a valid email address');
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -29,14 +29,14 @@ export default function ForgotPassword() {
 
     const siteUrl = import.meta.env.VITE_SITE_URL;
     if (siteUrl) {
-      return `${siteUrl.replace(/\/$/, "")}/update-password`;
+      return `${siteUrl.replace(/\/$/, '')}/update-password`;
     }
 
-    if (typeof window !== "undefined" && window.location?.origin) {
+    if (typeof window !== 'undefined' && window.location?.origin) {
       return `${window.location.origin}/update-password`;
     }
 
-    return "http://localhost:8080/update-password";
+    return 'http://localhost:8080/update-password';
   };
 
   const getDisplayDomain = () => {
@@ -56,10 +56,10 @@ export default function ForgotPassword() {
         // ignore
       }
     }
-    if (typeof window !== "undefined" && window.location?.host) {
+    if (typeof window !== 'undefined' && window.location?.host) {
       return window.location.host;
     }
-    return "your application";
+    return 'your application';
   };
 
   // Cooldown timer for resend
@@ -98,16 +98,17 @@ export default function ForgotPassword() {
       setResendCooldown(60);
 
       toast({
-        title: "Reset link sent",
-        description: "Check your email for the password reset link.",
+        title: 'Reset link sent',
+        description: 'Check your email for the password reset link.',
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to send reset link";
+      const msg =
+        err instanceof Error ? err.message : 'Failed to send reset link';
       setError(msg);
       toast({
-        title: "Error",
+        title: 'Error',
         description: msg,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -130,11 +131,12 @@ export default function ForgotPassword() {
 
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
-              Click the link in the email to reset your password on{" "}
+              Click the link in the email to reset your password on{' '}
               <strong className="text-gray-900">{getDisplayDomain()}</strong>.
             </p>
             <p className="text-xs text-muted-foreground">
-              If you don't see it within a minute, please check your spam or junk folder.
+              If you don't see it within a minute, please check your spam or
+              junk folder.
             </p>
           </div>
 
@@ -148,7 +150,9 @@ export default function ForgotPassword() {
               className="inline-flex items-center justify-center"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Email"}
+              {resendCooldown > 0
+                ? `Resend in ${resendCooldown}s`
+                : 'Resend Email'}
             </Button>
 
             <Button
@@ -210,7 +214,7 @@ export default function ForgotPassword() {
         </div>
 
         <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-          {isLoading ? "Sending Reset Link..." : "Send Reset Link"}
+          {isLoading ? 'Sending Reset Link...' : 'Send Reset Link'}
         </Button>
 
         <div className="text-center">

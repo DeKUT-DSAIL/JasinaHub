@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { MinimalRecorder } from "@/components/VoiceRecording/MinimalRecorder";
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { MinimalRecorder } from '@/components/VoiceRecording/MinimalRecorder';
 import {
   ArrowLeft,
   CheckCircle,
@@ -15,28 +15,34 @@ import {
   LogOut,
   RefreshCw,
   FileCheck2,
-} from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { Confetti } from "@/components/ui/confetti";
-import { RecoveryDialog } from "@/components/ui/RecoveryDialog";
-import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useHapticFeedback } from "@/hooks/useHapticFeedback";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { PullToRefreshIndicator } from "@/components/ui/PullToRefreshIndicator";
-import { OfflineIndicator } from "@/components/ui/OfflineIndicator";
-import { SkipConfirmationDialog, shouldShowSkipConfirmation } from "@/components/ui/SkipConfirmationDialog";
-import { SkipToContent } from "@/components/ui/SkipToContent";
-import { QuestionProgressDots } from "@/components/Questions/QuestionProgressDots";
+} from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Confetti } from '@/components/ui/confetti';
+import { RecoveryDialog } from '@/components/ui/RecoveryDialog';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
+import { SkipConfirmationDialog } from '@/components/ui/SkipConfirmationDialog';
+import { shouldShowSkipConfirmation } from '@/lib/skipConfirmation';
+import { SkipToContent } from '@/components/ui/SkipToContent';
+import { QuestionProgressDots } from '@/components/Questions/QuestionProgressDots';
 import {
   saveRecordingLocally,
   clearLocalRecording,
   getAllPendingRecordings,
   clearOldRecordings,
-  getLocalRecording
-} from "@/utils/recordingStorage";
+  getLocalRecording,
+} from '@/utils/recordingStorage';
 
 interface Question {
   id: string;
@@ -51,7 +57,10 @@ export default function Questions() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawCategoryParam = searchParams.get('category');
-  const [categoryInfo, setCategoryInfo] = useState<{ id: string; name: string } | null>(null);
+  const [categoryInfo, setCategoryInfo] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,21 +68,33 @@ export default function Questions() {
   const [responses, setResponses] = useState<Record<string, Blob>>({});
   const [isRecordingDisabled, setIsRecordingDisabled] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string; verified: boolean; voice_recording_consent: boolean } | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    first_name: string;
+    last_name: string;
+    verified: boolean;
+    voice_recording_consent: boolean;
+  } | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [hasConsented, setHasConsented] = useState(false);
-  const [submittedQuestions, setSubmittedQuestions] = useState<Set<string>>(new Set());
+  const [submittedQuestions, setSubmittedQuestions] = useState<Set<string>>(
+    new Set()
+  );
   const [isUploading, setIsUploading] = useState(false);
 
   // Phase 3 improvements state
   const [showConfetti, setShowConfetti] = useState(false);
   const [pendingRecordings, setPendingRecordings] = useState<any[]>([]);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
-  const [localSaveStatus, setLocalSaveStatus] = useState<'saved' | 'uploading' | 'uploaded' | null>(null);
+  const [localSaveStatus, setLocalSaveStatus] = useState<
+    'saved' | 'uploading' | 'uploaded' | null
+  >(null);
   const [showSkipConfirmation, setShowSkipConfirmation] = useState(false);
 
   // DB-driven consent content (falls back to hardcoded if not set)
-  const [dbConsentContent, setDbConsentContent] = useState<{ title: string; content_md: string } | null>(null);
+  const [dbConsentContent, setDbConsentContent] = useState<{
+    title: string;
+    content_md: string;
+  } | null>(null);
 
   // Mobile experience hooks
   const haptic = useHapticFeedback();
@@ -90,169 +111,216 @@ export default function Questions() {
           setDbConsentContent(data as { title: string; content_md: string });
         }
       })
-      .catch(() => { /* non-fatal */ });
+      .catch(() => {
+        /* non-fatal */
+      });
   }, []);
 
   // Helper to resolve category ID and name from query param
-  const resolveCategory = useCallback(async (param: string | null): Promise<{ id: string; name: string } | null> => {
-    const trimmed = param?.trim();
-    if (!trimmed) {
+  const resolveCategory = useCallback(
+    async (
+      param: string | null
+    ): Promise<{ id: string; name: string } | null> => {
+      const trimmed = param?.trim();
+      if (!trimmed) {
+        const { data: firstCat } = await supabase
+          .from('categories')
+          .select('id, name')
+          .order('name')
+          .limit(1)
+          .maybeSingle();
+        return (
+          firstCat || {
+            id: '11111111-1111-1111-1111-111111111111',
+            name: 'General Health',
+          }
+        );
+      }
+
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          trimmed
+        );
+      if (isUuid) {
+        const { data: cat } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('id', trimmed)
+          .maybeSingle();
+        if (cat) return cat;
+        return { id: trimmed, name: 'Category' };
+      }
+
+      // Lookup by name
+      const { data: match } = await supabase
+        .from('categories')
+        .select('id, name')
+        .ilike('name', `%${trimmed}%`)
+        .limit(1)
+        .maybeSingle();
+      if (match) return match;
+
       const { data: firstCat } = await supabase
         .from('categories')
         .select('id, name')
         .order('name')
         .limit(1)
         .maybeSingle();
-      return firstCat || { id: '11111111-1111-1111-1111-111111111111', name: 'General Health' };
-    }
-
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
-    if (isUuid) {
-      const { data: cat } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('id', trimmed)
-        .maybeSingle();
-      if (cat) return cat;
-      return { id: trimmed, name: 'Category' };
-    }
-
-    // Lookup by name
-    const { data: match } = await supabase
-      .from('categories')
-      .select('id, name')
-      .ilike('name', `%${trimmed}%`)
-      .limit(1)
-      .maybeSingle();
-    if (match) return match;
-
-    const { data: firstCat } = await supabase
-      .from('categories')
-      .select('id, name')
-      .order('name')
-      .limit(1)
-      .maybeSingle();
-    return firstCat || { id: '11111111-1111-1111-1111-111111111111', name: 'General Health' };
-  }, []);
-
-  const fetchQuestions = useCallback(async (userId: string, categoryId?: string) => {
-    try {
-      let questionsData: Question[] = [];
-
-      // 1. Fetch questions for the given category
-      if (categoryId) {
-        const { data, error } = await supabase
-          .from('questions')
-          .select('*')
-          .eq('category_id', categoryId)
-          .order('order_index');
-        if (!error && data && data.length > 0) {
-          questionsData = data;
+      return (
+        firstCat || {
+          id: '11111111-1111-1111-1111-111111111111',
+          name: 'General Health',
         }
-      }
-
-      // 2. Fallback to all questions if category has none
-      if (questionsData.length === 0) {
-        const { data, error } = await supabase
-          .from('questions')
-          .select('*')
-          .order('order_index');
-        if (!error && data && data.length > 0) {
-          questionsData = data;
-        }
-      }
-
-      // 3. Ultimate in-memory fallback starter questions
-      if (questionsData.length === 0) {
-        questionsData = [
-          {
-            id: '11111111-aaaa-1111-1111-111111111111',
-            category_id: categoryId || '11111111-1111-1111-1111-111111111111',
-            question_text: 'How do you describe a common cold in your language?',
-            order_index: 1,
-            image_url: null,
-          },
-          {
-            id: '11111111-bbbb-1111-1111-111111111111',
-            category_id: categoryId || '11111111-1111-1111-1111-111111111111',
-            question_text: 'What advice do you give someone with a headache?',
-            order_index: 2,
-            image_url: null,
-          }
-        ];
-      }
-
-      // 4. Fetch unique user counts per question (retirement cap < 3)
-      const questionUserCounts = new Map<string, number>();
-      try {
-        const { data: countsData } = await supabase.rpc('get_question_counts' as any);
-        if (Array.isArray(countsData)) {
-          countsData.forEach((item: { question_id: string; unique_user_count: number }) => {
-            questionUserCounts.set(item.question_id, Number(item.unique_user_count));
-          });
-        }
-      } catch (rpcErr) {
-        console.warn('RPC get_question_counts not available:', rpcErr);
-      }
-
-      // Filter questions with < 3 contributors
-      const availableQuestions = questionsData.filter((q: Question) => {
-        const count = questionUserCounts.get(q.id) || 0;
-        return count < 3;
-      });
-
-      // Maintain questions even if retired so the screen is never blank
-      const candidatePool = availableQuestions.length > 0 ? availableQuestions : questionsData;
-
-      // 5. Fetch existing voice responses for this user
-      let submittedQuestionIds = new Set<string>();
-      try {
-        const { data: existingResponses } = await supabase
-          .from('voice_responses')
-          .select('question_id')
-          .eq('user_id', userId);
-        submittedQuestionIds = new Set(existingResponses?.map(r => r.question_id) || []);
-        setSubmittedQuestions(submittedQuestionIds);
-      } catch (respErr) {
-        console.warn('Failed to fetch existing responses:', respErr);
-      }
-
-      const unansweredQuestions = candidatePool.filter(
-        (q: Question) => !submittedQuestionIds.has(q.id)
       );
+    },
+    []
+  );
 
-      // If user answered all questions in this category, keep candidatePool so they can re-record / review
-      const finalQuestions = unansweredQuestions.length > 0 ? unansweredQuestions : candidatePool;
+  const fetchQuestions = useCallback(
+    async (userId: string, categoryId?: string) => {
+      try {
+        let questionsData: Question[] = [];
 
-      setQuestions(finalQuestions);
-      setCurrentQuestionIndex(0);
-      return finalQuestions;
-    } catch (err) {
-      console.error('Error in fetchQuestions:', err);
-      return [];
-    }
-  }, []);
+        // 1. Fetch questions for the given category
+        if (categoryId) {
+          const { data, error } = await supabase
+            .from('questions')
+            .select('*')
+            .eq('category_id', categoryId)
+            .order('order_index');
+          if (!error && data && data.length > 0) {
+            questionsData = data;
+          }
+        }
+
+        // 2. Fallback to all questions if category has none
+        if (questionsData.length === 0) {
+          const { data, error } = await supabase
+            .from('questions')
+            .select('*')
+            .order('order_index');
+          if (!error && data && data.length > 0) {
+            questionsData = data;
+          }
+        }
+
+        // 3. Ultimate in-memory fallback starter questions
+        if (questionsData.length === 0) {
+          questionsData = [
+            {
+              id: '11111111-aaaa-1111-1111-111111111111',
+              category_id: categoryId || '11111111-1111-1111-1111-111111111111',
+              question_text:
+                'How do you describe a common cold in your language?',
+              order_index: 1,
+              image_url: null,
+            },
+            {
+              id: '11111111-bbbb-1111-1111-111111111111',
+              category_id: categoryId || '11111111-1111-1111-1111-111111111111',
+              question_text: 'What advice do you give someone with a headache?',
+              order_index: 2,
+              image_url: null,
+            },
+          ];
+        }
+
+        // 4. Fetch unique user counts per question (retirement cap < 3)
+        const questionUserCounts = new Map<string, number>();
+        try {
+          const { data: countsData } = await supabase.rpc(
+            'get_question_counts' as any
+          );
+          if (Array.isArray(countsData)) {
+            countsData.forEach(
+              (item: { question_id: string; unique_user_count: number }) => {
+                questionUserCounts.set(
+                  item.question_id,
+                  Number(item.unique_user_count)
+                );
+              }
+            );
+          }
+        } catch (rpcErr) {
+          console.warn('RPC get_question_counts not available:', rpcErr);
+        }
+
+        // Filter questions with < 3 contributors
+        const availableQuestions = questionsData.filter((q: Question) => {
+          const count = questionUserCounts.get(q.id) || 0;
+          return count < 3;
+        });
+
+        // Maintain questions even if retired so the screen is never blank
+        const candidatePool =
+          availableQuestions.length > 0 ? availableQuestions : questionsData;
+
+        // 5. Fetch existing voice responses for this user
+        let submittedQuestionIds = new Set<string>();
+        try {
+          const { data: existingResponses } = await supabase
+            .from('voice_responses')
+            .select('question_id')
+            .eq('user_id', userId);
+          submittedQuestionIds = new Set(
+            existingResponses?.map((r) => r.question_id) || []
+          );
+          setSubmittedQuestions(submittedQuestionIds);
+        } catch (respErr) {
+          console.warn('Failed to fetch existing responses:', respErr);
+        }
+
+        const unansweredQuestions = candidatePool.filter(
+          (q: Question) => !submittedQuestionIds.has(q.id)
+        );
+
+        // If user answered all questions in this category, keep candidatePool so they can re-record / review
+        const finalQuestions =
+          unansweredQuestions.length > 0 ? unansweredQuestions : candidatePool;
+
+        setQuestions(finalQuestions);
+        setCurrentQuestionIndex(0);
+        return finalQuestions;
+      } catch (err) {
+        console.error('Error in fetchQuestions:', err);
+        return [];
+      }
+    },
+    []
+  );
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
     haptic.lightTap();
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
       if (!currentUser) return;
 
-      const targetCategory = categoryInfo || (await resolveCategory(rawCategoryParam));
+      const targetCategory =
+        categoryInfo || (await resolveCategory(rawCategoryParam));
       if (targetCategory && !categoryInfo) {
         setCategoryInfo(targetCategory);
       }
 
       await fetchQuestions(currentUser.id, targetCategory?.id);
-      toast({ title: "Questions Refreshed", description: "Updated question list." });
+      toast({
+        title: 'Questions Refreshed',
+        description: 'Updated question list.',
+      });
     } catch (error) {
       console.error('Refresh error:', error);
     }
   }, [haptic, categoryInfo, rawCategoryParam, resolveCategory, fetchQuestions]);
 
-  const { containerRef, pullDistance, pullProgress, isRefreshing, handlers: pullHandlers } = usePullToRefresh({
+  const {
+    containerRef,
+    pullDistance,
+    pullProgress,
+    isRefreshing,
+    handlers: pullHandlers,
+  } = usePullToRefresh({
     onRefresh: handleRefresh,
     enabled: !isUploading,
   });
@@ -261,7 +329,9 @@ export default function Questions() {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
         if (!authUser) {
           navigate('/login');
           return;
@@ -293,9 +363,9 @@ export default function Questions() {
 
             if (!roles) {
               toast({
-                title: "Account Not Verified",
-                description: "Your account is pending admin verification.",
-                variant: "destructive"
+                title: 'Account Not Verified',
+                description: 'Your account is pending admin verification.',
+                variant: 'destructive',
               });
               navigate('/dashboard');
               return;
@@ -308,16 +378,19 @@ export default function Questions() {
         setCategoryInfo(targetCategory);
 
         // Fetch questions for this category
-        const loadedQuestions = await fetchQuestions(authUser.id, targetCategory?.id);
+        const loadedQuestions = await fetchQuestions(
+          authUser.id,
+          targetCategory?.id
+        );
         if (loadedQuestions && loadedQuestions.length > 0) {
           setCurrentQuestionIndex(0);
         }
       } catch (error) {
         console.error('Error initializing data:', error);
         toast({
-          title: "Error",
-          description: "Failed to load questions",
-          variant: "destructive"
+          title: 'Error',
+          description: 'Failed to load questions',
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
@@ -328,14 +401,20 @@ export default function Questions() {
   }, [navigate, rawCategoryParam, resolveCategory, fetchQuestions]);
 
   // Strictly bound question index
-  const safeQuestionIndex = questions.length > 0
-    ? Math.min(Math.max(0, currentQuestionIndex), questions.length - 1)
-    : 0;
+  const safeQuestionIndex =
+    questions.length > 0
+      ? Math.min(Math.max(0, currentQuestionIndex), questions.length - 1)
+      : 0;
 
   const currentQuestion = questions[safeQuestionIndex] || null;
-  const progress = questions.length > 0 ? ((safeQuestionIndex + 1) / questions.length) * 100 : 0;
+  const progress =
+    questions.length > 0
+      ? ((safeQuestionIndex + 1) / questions.length) * 100
+      : 0;
   const hasResponse = currentQuestion ? !!responses[currentQuestion.id] : false;
-  const isQuestionSubmitted = currentQuestion ? submittedQuestions.has(currentQuestion.id) : false;
+  const isQuestionSubmitted = currentQuestion
+    ? submittedQuestions.has(currentQuestion.id)
+    : false;
 
   // Swipe gesture handlers
   const { handlers: swipeHandlers } = useSwipeGesture({
@@ -380,7 +459,7 @@ export default function Questions() {
         .from('profiles')
         .update({
           voice_recording_consent: true,
-          consent_timestamp: new Date().toISOString()
+          consent_timestamp: new Date().toISOString(),
         })
         .eq('id', user.id);
 
@@ -388,8 +467,8 @@ export default function Questions() {
       setShowConsentModal(false);
 
       toast({
-        title: "Consent confirmed",
-        description: "You can now proceed with recording your responses."
+        title: 'Consent confirmed',
+        description: 'You can now proceed with recording your responses.',
       });
     } catch (error) {
       console.error('Error storing consent:', error);
@@ -404,12 +483,17 @@ export default function Questions() {
   };
 
   // Upload recording directly to Supabase Storage ('voice-recordings' bucket)
-  const handleRecordingComplete = async (audioBlob: Blob, durationSeconds: number) => {
+  const handleRecordingComplete = async (
+    audioBlob: Blob,
+    durationSeconds: number
+  ) => {
     if (!currentQuestion || !user) return;
 
     haptic.success();
 
-    const userName = userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : 'Volunteer';
+    const userName = userProfile
+      ? `${userProfile.first_name} ${userProfile.last_name}`
+      : 'Volunteer';
     const saved = await saveRecordingLocally(
       currentQuestion.id,
       audioBlob,
@@ -428,7 +512,7 @@ export default function Questions() {
     setLocalSaveStatus('uploading');
 
     try {
-      setResponses(prev => ({
+      setResponses((prev) => ({
         ...prev,
         [currentQuestion.id]: audioBlob,
       }));
@@ -450,30 +534,30 @@ export default function Questions() {
       }
 
       // Obtain the public URL for playback and transcription
-      const { data: { publicUrl } } = supabase.storage
-        .from('voice-recordings')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('voice-recordings').getPublicUrl(filePath);
 
       // Save recording record into public.voice_responses
       const cappedDuration = Math.min(durationSeconds, 30);
-      const { error: dbError } = await supabase
-        .from('voice_responses')
-        .insert({
-          user_id: user.id,
-          question_id: currentQuestion.id,
-          audio_file_url: publicUrl,
-          duration_seconds: cappedDuration,
-          response_type: 'voice',
-          status: 'pending'
-        });
+      const { error: dbError } = await supabase.from('voice_responses').insert({
+        user_id: user.id,
+        question_id: currentQuestion.id,
+        audio_file_url: publicUrl,
+        duration_seconds: cappedDuration,
+        response_type: 'voice',
+        status: 'pending',
+      });
 
       if (dbError) {
         console.error('Database insert error:', dbError);
-        throw new Error(`Failed to save recording information: ${dbError.message}`);
+        throw new Error(
+          `Failed to save recording information: ${dbError.message}`
+        );
       }
 
       // Mark question as completed
-      setSubmittedQuestions(prev => new Set([...prev, currentQuestion.id]));
+      setSubmittedQuestions((prev) => new Set([...prev, currentQuestion.id]));
       clearLocalRecording(currentQuestion.id);
       setLocalSaveStatus('uploaded');
 
@@ -481,22 +565,22 @@ export default function Questions() {
       setTimeout(() => setShowConfetti(false), 3000);
 
       toast({
-        title: "Response saved!",
-        description: "Moving to next question...",
+        title: 'Response saved!',
+        description: 'Moving to next question...',
       });
 
       // Auto advance after 1.2s
       setTimeout(() => {
         handleNext();
       }, 1200);
-
     } catch (error) {
       console.error('Error saving recording:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Please try recording again.';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Please try recording again.';
       toast({
-        title: "Upload Failed",
+        title: 'Upload Failed',
         description: errorMessage,
-        variant: "destructive"
+        variant: 'destructive',
       });
     } finally {
       setIsUploading(false);
@@ -520,8 +604,8 @@ export default function Questions() {
     } else {
       navigate('/dashboard');
       toast({
-        title: "Assessment Incomplete",
-        description: "You can continue answering questions anytime.",
+        title: 'Assessment Incomplete',
+        description: 'You can continue answering questions anytime.',
       });
     }
   };
@@ -530,24 +614,26 @@ export default function Questions() {
     const recording = getLocalRecording(questionId);
     if (!recording) {
       toast({
-        title: "Recording not found",
-        description: "Unable to retrieve the saved recording.",
-        variant: "destructive",
+        title: 'Recording not found',
+        description: 'Unable to retrieve the saved recording.',
+        variant: 'destructive',
       });
       return;
     }
 
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (!question) return;
 
-    const questionIndex = questions.findIndex(q => q.id === questionId);
+    const questionIndex = questions.findIndex((q) => q.id === questionId);
     if (questionIndex >= 0) {
       setCurrentQuestionIndex(questionIndex);
     }
 
     await handleRecordingComplete(recording.blob, recording.duration);
 
-    setPendingRecordings(prev => prev.filter(p => p.questionId !== questionId));
+    setPendingRecordings((prev) =>
+      prev.filter((p) => p.questionId !== questionId)
+    );
     if (pendingRecordings.length <= 1) {
       setShowRecoveryDialog(false);
     }
@@ -555,35 +641,37 @@ export default function Questions() {
 
   const handleDiscardRecording = (questionId: string) => {
     clearLocalRecording(questionId);
-    setPendingRecordings(prev => prev.filter(p => p.questionId !== questionId));
+    setPendingRecordings((prev) =>
+      prev.filter((p) => p.questionId !== questionId)
+    );
 
     if (pendingRecordings.length <= 1) {
       setShowRecoveryDialog(false);
     }
 
     toast({
-      title: "Recording discarded",
-      description: "The saved recording has been removed.",
+      title: 'Recording discarded',
+      description: 'The saved recording has been removed.',
     });
   };
 
   const handleDiscardAll = () => {
-    pendingRecordings.forEach(recording => {
+    pendingRecordings.forEach((recording) => {
       clearLocalRecording(recording.questionId);
     });
     setPendingRecordings([]);
     setShowRecoveryDialog(false);
 
     toast({
-      title: "All recordings discarded",
-      description: "All saved recordings have been removed.",
+      title: 'All recordings discarded',
+      description: 'All saved recordings have been removed.',
     });
   };
 
   const handleNext = async () => {
     if (safeQuestionIndex < questions.length - 1) {
       if (currentQuestion && hasResponse) {
-        setSubmittedQuestions(prev => new Set([...prev, currentQuestion.id]));
+        setSubmittedQuestions((prev) => new Set([...prev, currentQuestion.id]));
       }
       setCurrentQuestionIndex(safeQuestionIndex + 1);
     } else {
@@ -593,16 +681,21 @@ export default function Questions() {
           .select('duration_seconds')
           .eq('user_id', user.id);
 
-        const totalDuration = responseData?.reduce((sum, r) => sum + (r.duration_seconds || 0), 0) || 0;
-        const questionsAnswered = submittedQuestions.size + (hasResponse ? 1 : 0);
+        const totalDuration =
+          responseData?.reduce(
+            (sum, r) => sum + (r.duration_seconds || 0),
+            0
+          ) || 0;
+        const questionsAnswered =
+          submittedQuestions.size + (hasResponse ? 1 : 0);
 
         navigate('/completion', {
           state: {
             stats: {
               questionsAnswered,
               totalDuration,
-            }
-          }
+            },
+          },
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -611,8 +704,8 @@ export default function Questions() {
             stats: {
               questionsAnswered: submittedQuestions.size,
               totalDuration: 0,
-            }
-          }
+            },
+          },
         });
       }
     }
@@ -629,8 +722,12 @@ export default function Questions() {
             <Mic className="absolute inset-0 m-auto w-6 h-6 text-primary" />
           </div>
           <div className="space-y-1.5">
-            <h2 className="text-xl font-bold text-slate-900">Setting up session</h2>
-            <p className="text-slate-500 text-sm font-medium">Preparing category prompts...</p>
+            <h2 className="text-xl font-bold text-slate-900">
+              Setting up session
+            </h2>
+            <p className="text-slate-500 text-sm font-medium">
+              Preparing category prompts...
+            </p>
           </div>
         </div>
       </div>
@@ -645,13 +742,18 @@ export default function Questions() {
           <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-blue-500" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-3">All Caught Up</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">
+            All Caught Up
+          </h2>
           <p className="text-slate-500 mb-8">
             {categoryInfo?.name
               ? `There are no pending questions for you in ${categoryInfo.name} at this moment.`
               : 'There are no pending questions for you at this moment.'}
           </p>
-          <Button onClick={() => navigate('/dashboard')} className="w-full h-12 text-base">
+          <Button
+            onClick={() => navigate('/dashboard')}
+            className="w-full h-12 text-base"
+          >
             Return to Dashboard
           </Button>
         </div>
@@ -717,9 +819,13 @@ export default function Questions() {
               Question
             </span>
             <div className="flex items-center gap-1">
-              <span className="text-base font-bold text-slate-900">{safeQuestionIndex + 1}</span>
+              <span className="text-base font-bold text-slate-900">
+                {safeQuestionIndex + 1}
+              </span>
               <span className="text-slate-300">/</span>
-              <span className="text-sm font-medium text-slate-500">{questions.length}</span>
+              <span className="text-sm font-medium text-slate-500">
+                {questions.length}
+              </span>
             </div>
           </div>
 
@@ -760,8 +866,13 @@ export default function Questions() {
                 <Shield className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-bold text-slate-900">Voice Recording Consent</p>
-                <p className="text-xs text-slate-600">Please review and accept project research consent before recording.</p>
+                <p className="text-sm font-bold text-slate-900">
+                  Voice Recording Consent
+                </p>
+                <p className="text-xs text-slate-600">
+                  Please review and accept project research consent before
+                  recording.
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -784,7 +895,10 @@ export default function Questions() {
           </div>
         )}
 
-        <div className="w-full space-y-4" key={currentQuestion.id || safeQuestionIndex}>
+        <div
+          className="w-full space-y-4"
+          key={currentQuestion.id || safeQuestionIndex}
+        >
           {/* Question Card */}
           <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md border border-slate-100 overflow-hidden">
             <div className="p-5 sm:p-7 space-y-5">
@@ -829,11 +943,17 @@ export default function Questions() {
                   <MinimalRecorder
                     key={currentQuestion.id}
                     onRecordingComplete={handleRecordingComplete}
-                    disabled={isRecordingDisabled || isUploading || isQuestionSubmitted || !hasConsented}
+                    disabled={
+                      isRecordingDisabled ||
+                      isUploading ||
+                      isQuestionSubmitted ||
+                      !hasConsented
+                    }
                   />
                   {!hasConsented && (
                     <p className="text-center text-xs text-amber-600 font-medium mt-3">
-                      Please accept the consent declaration above to start recording.
+                      Please accept the consent declaration above to start
+                      recording.
                     </p>
                   )}
                 </div>
@@ -842,7 +962,8 @@ export default function Questions() {
                 <div className="h-7 flex items-center justify-center mt-2.5">
                   {isUploading && (
                     <span className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full animate-pulse">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving to Supabase storage...
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving to
+                      Supabase storage...
                     </span>
                   )}
                   {localSaveStatus === 'saved' && !isUploading && (
@@ -860,7 +981,7 @@ export default function Questions() {
             total={questions.length}
             current={safeQuestionIndex}
             completed={submittedQuestions}
-            questionIds={questions.map(q => q.id)}
+            questionIds={questions.map((q) => q.id)}
             onDotClick={(index) => {
               if (submittedQuestions.has(questions[index].id)) {
                 haptic.lightTap();
@@ -900,7 +1021,8 @@ export default function Questions() {
                   Project Name: Kikuyu Speech Data Collection
                 </p>
                 <p className="text-xs text-slate-500 font-medium">
-                  Institution: Centre for Data Science and Artificial Intelligence, Nyeri, Kenya
+                  Institution: Centre for Data Science and Artificial
+                  Intelligence, Nyeri, Kenya
                 </p>
               </div>
             )}
@@ -916,7 +1038,18 @@ export default function Questions() {
               /* Hardcoded fallback */
               <>
                 <p className="text-slate-700 leading-relaxed text-sm">
-                  You are invited to participate in a data collection exercise conducted by <span className="font-semibold text-slate-900">Centre for Data Science and Artificial Intelligence (DSAIL)</span> at Dedan Kimathi University of Technology (DeKuT), using <span className="font-semibold text-slate-900">JasinaHub</span>. The goal of this project is to collect speech data in Kikuyu language to support the development of Large Language Models (LLMs) specifically for health-related applications.
+                  You are invited to participate in a data collection exercise
+                  conducted by{' '}
+                  <span className="font-semibold text-slate-900">
+                    Centre for Data Science and Artificial Intelligence (DSAIL)
+                  </span>{' '}
+                  at Dedan Kimathi University of Technology (DeKuT), using{' '}
+                  <span className="font-semibold text-slate-900">
+                    JasinaHub
+                  </span>
+                  . The goal of this project is to collect speech data in Kikuyu
+                  language to support the development of Large Language Models
+                  (LLMs) specifically for health-related applications.
                 </p>
 
                 <div className="grid sm:grid-cols-2 gap-3">
@@ -946,7 +1079,10 @@ export default function Questions() {
                     <Shield className="w-4 h-4" /> Key Confidentiality Points
                   </h4>
                   <p>Participation is voluntary; you may stop at any time.</p>
-                  <p>Your contributions are pseudonymised for downstream machine learning datasets.</p>
+                  <p>
+                    Your contributions are pseudonymised for downstream machine
+                    learning datasets.
+                  </p>
                 </div>
               </>
             )}

@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Home, LogOut, Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Home, LogOut, Save } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface QuestionsHeaderProps {
   progress: number;
@@ -12,9 +12,9 @@ interface QuestionsHeaderProps {
   onLogout: () => void;
 }
 
-export function QuestionsHeader({ 
-  progress, 
-  currentIndex, 
+export function QuestionsHeader({
+  progress,
+  currentIndex,
   totalQuestions,
   localSaveStatus,
   onLogout,
@@ -34,20 +34,25 @@ export function QuestionsHeader({
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
           </Button>
-          
+
           <div className="flex items-center gap-2">
             {localSaveStatus && (
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={`text-xs gap-1 ${
-                  localSaveStatus === 'uploaded' ? 'bg-green-50 text-green-700 border-green-200' :
-                  localSaveStatus === 'uploading' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                  'bg-amber-50 text-amber-700 border-amber-200'
+                  localSaveStatus === 'uploaded'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : localSaveStatus === 'uploading'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}
               >
                 <Save className="w-3 h-3" />
-                {localSaveStatus === 'uploaded' ? 'Saved' : 
-                 localSaveStatus === 'uploading' ? 'Uploading...' : 'Saved locally'}
+                {localSaveStatus === 'uploaded'
+                  ? 'Saved'
+                  : localSaveStatus === 'uploading'
+                    ? 'Uploading...'
+                    : 'Saved locally'}
               </Badge>
             )}
             <Button
@@ -68,10 +73,12 @@ export function QuestionsHeader({
             </Button>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600">
-            <span>Question {currentIndex + 1} of {totalQuestions}</span>
+            <span>
+              Question {currentIndex + 1} of {totalQuestions}
+            </span>
             <span>{Math.round(progress)}% complete</span>
           </div>
           <Progress value={progress} className="h-2 bg-slate-100" />
